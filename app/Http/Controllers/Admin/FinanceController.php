@@ -6,25 +6,58 @@ use App\Http\Controllers\Controller;
 use App\Models\Finance;
 use App\Models\Athlete;
 use Illuminate\Http\Request;
+use App\Exports\FinancesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FinanceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $finances = Finance::with('athlete')->orderBy('tanggal', 'desc')->orderBy('id', 'desc')->paginate(15);
+        $query = Finance::query()->with('athlete');
         
-        $totalPemasukan = Finance::query()->where('jenis', 'pemasukan')->sum('nominal');
-        $totalPengeluaran = Finance::query()->where('jenis', 'pengeluaran')->sum('nominal');
-        $saldoSekarang = $totalPemasukan - $totalPengeluaran;
+        if ($request->has('bulan') && $request->bulan != '') {
+            $query->where('bulan_tagihan', $request->bulan);
+        }
 
-        return view('admin.finances.index', compact('finances', 'totalPemasukan', 'totalPengeluaran', 'saldoSekarang'));
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('kategori', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%")
+                  ->orWhereHas('athlete', function($q2) use ($search) {
+                      $q2->where('nama', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->has('jenis') && $request->jenis != '') {
+            $query->where('jenis', $request->jenis);
+        }
+
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status_bayar', $request->status);
+        }
+
+        $perPage = $request->input('per_page', 15);
+        $finances = $query->orderBy('tanggal', 'desc')->orderBy('id', 'desc')->paginate($perPage)->appends($request->all());
+        
+        // Ambil daftar bulan untuk dropdown filter
+        $listBulan = Finance::query()->whereNotNull('bulan_tagihan', 'and')->select('bulan_tagihan')->distinct()->pluck('bulan_tagihan');
+
+        $totalPemasukanLunas = Finance::query()->where('jenis', 'pemasukan')->where('status_bayar', 'lunas')->sum('nominal');
+        $totalPemasukanBelumLunas = Finance::query()->where('jenis', 'pemasukan')->where('status_bayar', 'belum_lunas')->sum('nominal');
+        $totalPengeluaran = Finance::query()->where('jenis', 'pengeluaran')->sum('nominal');
+        $saldoSekarang = $totalPemasukanLunas - $totalPengeluaran;
+
+        return view('admin.finances.index', compact('finances', 'totalPemasukanLunas', 'totalPemasukanBelumLunas', 'totalPengeluaran', 'saldoSekarang', 'listBulan'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         // Ambil daftar atlet untuk dropdown pilihan siswa yang membayar kas
         $athletes = Athlete::query()->orderBy('nama', 'asc')->get();
-        return view('admin.finances.create', compact('athletes'));
+        $selectedAthleteId = $request->get('athlete_id');
+        return view('admin.finances.create', compact('athletes', 'selectedAthleteId'));
     }
 
     public function store(Request $request)
@@ -165,5 +198,33 @@ class FinanceController extends Controller
             // Update saldo_akhir without firing events to avoid infinite loops if any
             Finance::query()->where('id', $f->id)->update(['saldo_akhir' => $saldo]);
         }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $bulan = $request->bulan;
+        $namaFile = 'Laporan_Keuangan_Superseed_Academy_' . ($bulan ? str_replace(' ', '_', $bulan) : 'Semua') . '_' . date('Y-m-d_H-i') . '.xlsx';
+        return Excel::download(new FinancesExport($bulan), $namaFile);
+    }
+
+    public function print(Request $request)
+    {
+        $query = Finance::query()->with('athlete');
+        
+        if ($request->has('bulan') && $request->bulan != '') {
+            $query->where('bulan_tagihan', $request->bulan);
+            $totalPemasukanLunas = Finance::query()->where('jenis', 'pemasukan')->where('status_bayar', 'lunas')->where('bulan_tagihan', $request->bulan)->sum('nominal');
+            $totalPemasukanBelumLunas = Finance::query()->where('jenis', 'pemasukan')->where('status_bayar', 'belum_lunas')->where('bulan_tagihan', $request->bulan)->sum('nominal');
+            $totalPengeluaran = Finance::query()->where('jenis', 'pengeluaran')->where('bulan_tagihan', $request->bulan)->sum('nominal');
+        } else {
+            $totalPemasukanLunas = Finance::query()->where('jenis', 'pemasukan')->where('status_bayar', 'lunas')->sum('nominal');
+            $totalPemasukanBelumLunas = Finance::query()->where('jenis', 'pemasukan')->where('status_bayar', 'belum_lunas')->sum('nominal');
+            $totalPengeluaran = Finance::query()->where('jenis', 'pengeluaran')->sum('nominal');
+        }
+
+        $finances = $query->orderBy('tanggal', 'asc')->orderBy('id', 'asc')->get();
+        $saldoSekarang = $totalPemasukanLunas - $totalPengeluaran;
+
+        return view('admin.finances.print', compact('finances', 'totalPemasukanLunas', 'totalPemasukanBelumLunas', 'totalPengeluaran', 'saldoSekarang'));
     }
 }

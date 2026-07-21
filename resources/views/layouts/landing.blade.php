@@ -13,7 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Seed Academy - @yield('title', 'Akademi futsal')</title>
-    <meta name="description" content="Pusat pembinaan sepak bola usia dini dan muda yang profesional dan terstruktur.">
+    <meta name="description" content="Pusat pembinaan Futsal usia dini dan muda yang profesional dan terstruktur.">
     
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <!-- Fonts -->

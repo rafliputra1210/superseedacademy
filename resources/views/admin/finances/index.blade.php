@@ -4,9 +4,12 @@
 @section('content')
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card card-custom bg-success text-white p-3 shadow-sm border-0">
-            <span class="text-xs text-uppercase opacity-75 font-weight-bold">Total Pemasukan</span>
-            <h3 class="mb-0 mt-1 font-weight-bold">+ Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</h3>
+        <div class="card card-custom bg-success text-white p-3 shadow-sm border-0 h-100">
+            <span class="text-xs text-uppercase opacity-75 font-weight-bold"><i class="bi bi-box-arrow-in-down me-1"></i> Pemasukan Lunas</span>
+            <h3 class="mb-2 mt-1 font-weight-bold">+ Rp {{ number_format($totalPemasukanLunas, 0, ',', '.') }}</h3>
+            <div class="border-top border-light pt-2 mt-auto opacity-75 small font-weight-bold">
+                <i class="bi bi-hourglass-split me-1"></i> Belum Lunas (Piutang): Rp {{ number_format($totalPemasukanBelumLunas, 0, ',', '.') }}
+            </div>
         </div>
     </div>
     <div class="col-md-4">
@@ -24,12 +27,12 @@
 </div>
 
 <div class="card card-custom bg-white p-4 shadow-sm border-0">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h5 class="mb-1 font-weight-bold text-dark"><i class="bi bi-wallet2 text-success me-2"></i>Buku Kas Superseed Academy</h5>
             <p class="text-muted small mb-0">Catatan alur pemasukan dan pengeluaran uang kas secara transparan.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
             <form id="bulkDeleteForm" action="{{ route('admin.finances.bulkDelete') }}" method="POST" class="d-none">
                 @csrf
                 @method('DELETE')
@@ -37,6 +40,15 @@
             <button type="button" class="btn btn-danger btn-sm font-weight-bold px-3 text-white shadow-sm d-none" id="btnBulkDelete" onclick="confirmBulkDelete()">
                 <i class="bi bi-trash-fill me-1"></i> Hapus Terpilih
             </button>
+            
+            <a href="{{ route('admin.finances.print', request()->all()) }}" target="_blank" class="btn btn-secondary btn-sm font-weight-bold px-3 shadow-sm">
+                <i class="bi bi-printer-fill me-1"></i> Print
+            </a>
+            
+            <a href="{{ route('admin.finances.export', request()->all()) }}" class="btn btn-success btn-sm font-weight-bold px-3 shadow-sm">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+            </a>
+            
             <button type="button" class="btn btn-warning btn-sm font-weight-bold px-3 text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGenerateBulk">
                 <i class="bi bi-lightning-charge-fill me-1"></i> Buat Tagihan Massal
             </button>
@@ -44,6 +56,51 @@
                 <i class="bi bi-plus-circle me-1"></i> Catat Transaksi Baru
             </a>
         </div>
+    </div>
+
+    <!-- Kotak Pencarian & Filter Terpusat -->
+    <div class="mb-4 bg-light p-3 rounded border border-light">
+        <form action="{{ route('admin.finances.index') }}" method="GET" class="d-flex flex-wrap align-items-center gap-2">
+            <div class="input-group input-group-sm flex-grow-1 shadow-sm" style="min-width: 250px;">
+                <span class="input-group-text bg-white border-secondary"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-secondary" placeholder="Cari nama siswa, kategori, keterangan..." value="{{ request('search') }}">
+            </div>
+            
+            <select name="jenis" class="form-select form-select-sm w-auto border-secondary shadow-sm">
+                <option value="">Semua Jenis</option>
+                <option value="pemasukan" {{ request('jenis') == 'pemasukan' ? 'selected' : '' }}>Pemasukan</option>
+                <option value="pengeluaran" {{ request('jenis') == 'pengeluaran' ? 'selected' : '' }}>Pengeluaran</option>
+            </select>
+
+            <select name="status" class="form-select form-select-sm w-auto border-secondary shadow-sm">
+                <option value="">Semua Status</option>
+                <option value="lunas" {{ request('status') == 'lunas' ? 'selected' : '' }}>Lunas</option>
+                <option value="belum_lunas" {{ request('status') == 'belum_lunas' ? 'selected' : '' }}>Belum Lunas</option>
+            </select>
+            
+            <select name="bulan" id="filterBulan" class="form-select form-select-sm border-secondary shadow-sm" style="min-width: 140px;">
+                <option value="">Semua Bulan</option>
+                @foreach($listBulan as $bln)
+                    <option value="{{ $bln }}" {{ request('bulan') == $bln ? 'selected' : '' }}>{{ $bln }}</option>
+                @endforeach
+            </select>
+            
+            <div class="input-group input-group-sm shadow-sm" style="width: auto;">
+                <span class="input-group-text bg-white border-secondary"><i class="bi bi-list-ol text-muted"></i></span>
+                <select name="per_page" class="form-select border-secondary text-dark" style="min-width: 80px;">
+                    <option value="15" {{ request('per_page') == 15 ? 'selected' : '' }}>15 Baris</option>
+                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 Baris</option>
+                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100 Baris</option>
+                    <option value="150" {{ request('per_page') == 150 ? 'selected' : '' }}>150 Baris</option>
+                    <option value="200" {{ request('per_page') == 200 ? 'selected' : '' }}>200 Baris</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm"><i class="bi bi-funnel-fill me-1"></i> Terapkan</button>
+            @if(request('search') || request('jenis') || request('status') || request('bulan') || (request('per_page') && request('per_page') != 15))
+                <a href="{{ route('admin.finances.index') }}" class="btn btn-outline-danger btn-sm shadow-sm" title="Reset Semua Filter"><i class="bi bi-x-circle me-1"></i> Reset</a>
+            @endif
+        </form>
     </div>
 
     <div class="table-responsive">

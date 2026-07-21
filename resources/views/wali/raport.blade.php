@@ -12,7 +12,7 @@
     <form action="{{ route('wali.raport') }}" method="GET" class="d-flex gap-2">
         <select name="child_id" class="form-select form-select-sm border-success-subtle fw-medium" onchange="this.form.submit()">
             @foreach($myAthletes as $child)
-                <option value="{{ $child->id }}" {{ ($athlete->id == $child->id) ? 'selected' : '' }}>{{ $child->nama }} (U-{{ $child->nomor_punggung ?? 'XX' }})</option>
+                <option value="{{ $child->id }}" {{ ($athlete->id == $child->id) ? 'selected' : '' }}>{{ $child->nama }} ({{ $child->kelompok_umur ?? 'KU -' }})</option>
             @endforeach
         </select>
     </form>
@@ -22,10 +22,10 @@
 <div class="card card-custom p-4 mb-4 text-white hover-elevate" style="background: linear-gradient(135deg, var(--brand-green) 0%, #064e3b 100%) !important; border: none;">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
-            <span class="text-uppercase text-xs tracking-wider opacity-75 fw-bold" style="letter-spacing: 1px;">Evaluasi Berkala Sekolah Sepak Bola</span>
+            <span class="text-uppercase text-xs tracking-wider opacity-75 fw-bold" style="letter-spacing: 1px;">Evaluasi perkembangan Super Seed Academy</span>
             <h4 class="mb-0 mt-1 fw-bold">Raport Perkembangan Skill: {{ $athlete->nama }}</h4>
         </div>
-        <span class="badge bg-warning text-dark fs-6 fw-bold px-3 py-2">Kelompok Usia U-{{ $athlete->nomor_punggung ?? 'XX' }}</span>
+        <span class="badge bg-warning text-dark fs-6 fw-bold px-3 py-2">Kelompok Usia {{ $athlete->kelompok_umur ?? '-' }}</span>
     </div>
 </div>
 

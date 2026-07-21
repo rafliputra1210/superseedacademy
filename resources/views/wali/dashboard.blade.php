@@ -1,4 +1,4 @@
-﻿@extends('layouts.wali')
+@extends('layouts.wali')
 
 @section('content')
 <!-- Pilihan Ganti Anak (Jika Punya Lebih dari 1 Anak di Akademi) -->
@@ -12,7 +12,7 @@
         <select name="child_id" class="form-select form-select-sm fw-medium border-primary-subtle text-brand-navy" onchange="this.form.submit()" style="min-width: 200px;">
             @foreach($myAthletes as $child)
                 <option value="{{ $child->id }}" {{ ($athlete && $athlete->id == $child->id) ? 'selected' : '' }}>
-                    {{ $child->nama }} (U-{{ $child->nomor_punggung ?? 'XX' }})
+                    {{ $child->nama }} ({{ $child->kelompok_umur ?? 'KU -' }})
                 </option>
             @endforeach
         </select>

@@ -95,6 +95,7 @@
     .btn-act-edit  { background: #fff7ed; color: #d97706; border-color: #fed7aa; }
     .btn-act-del   { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
     .btn-act-print { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+    .btn-act-pay   { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 </style>
 
 {{-- ===================== HEADER CARD ===================== --}}
@@ -278,6 +279,9 @@
                     {{-- Aksi --}}
                     <td class="text-center px-3 py-3">
                         <div class="d-flex justify-content-center gap-1">
+                            <a href="{{ route('admin.finances.create', ['athlete_id' => $item->id]) }}" class="btn-act btn-act-pay" title="Input Pembayaran">
+                                <i class="bi bi-cash-coin"></i>
+                            </a>
                             <a href="{{ route('admin.athletes.edit', $item->id) }}" class="btn-act btn-act-edit" title="Edit Siswa">
                                 <i class="bi bi-pencil-fill"></i>
                             </a>

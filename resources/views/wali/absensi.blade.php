@@ -12,7 +12,7 @@
     <form action="{{ route('wali.absensi') }}" method="GET" class="d-flex gap-2">
         <select name="child_id" class="form-select form-select-sm border-success-subtle fw-medium" onchange="this.form.submit()">
             @foreach($myAthletes as $child)
-                <option value="{{ $child->id }}" {{ ($athlete->id == $child->id) ? 'selected' : '' }}>{{ $child->nama }} (U-{{ $child->nomor_punggung ?? 'XX' }})</option>
+                <option value="{{ $child->id }}" {{ ($athlete->id == $child->id) ? 'selected' : '' }}>{{ $child->nama }} ({{ $child->kelompok_umur ?? 'KU -' }})</option>
             @endforeach
         </select>
     </form>

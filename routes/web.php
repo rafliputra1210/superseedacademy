@@ -66,6 +66,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Rute Keuangan, Pengumuman, dan Raport
     Route::post('/finances/generate-bulk', [FinanceController::class, 'generateBulkTagihan'])->name('finances.generate-bulk');
     Route::delete('/finances/bulk-delete', [FinanceController::class, 'bulkDelete'])->name('finances.bulkDelete');
+    Route::get('/finances/export/excel', [FinanceController::class, 'exportExcel'])->name('finances.export');
+    Route::get('/finances/print', [FinanceController::class, 'print'])->name('finances.print');
     Route::resource('/finances', FinanceController::class);
     Route::resource('/announcements', AnnouncementController::class);
     Route::patch('/reports/{report}/toggle-archive', [ReportController::class, 'toggleArchive'])->name('reports.toggle-archive');

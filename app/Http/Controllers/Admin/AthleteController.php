@@ -30,6 +30,7 @@ class AthleteController extends Controller
                   ->orWhere('kelompok_umur', 'like', "%{$cari}%")
                   ->orWhere('kelompok_latihan', 'like', "%{$cari}%")
                   ->orWhere('posisi_bermain', 'like', "%{$cari}%")
+                  ->orWhere('nomor_punggung', 'like', "%{$cari}%")
                   ->orWhere('nomor_wa_ortu', 'like', "%{$cari}%")
                   // Mencari berdasarkan Username akun wali murid
                   ->orWhereHas('user', function($u) use ($cari) {
@@ -38,10 +39,26 @@ class AthleteController extends Controller
             });
         }
 
+        // Filter Dropdown
+        if ($request->filled('kelompok_umur')) {
+            $query->where('kelompok_umur', $request->kelompok_umur);
+        }
+        if ($request->filled('kelompok_latihan')) {
+            $query->where('kelompok_latihan', $request->kelompok_latihan);
+        }
+        if ($request->filled('posisi_bermain')) {
+            $query->where('posisi_bermain', $request->posisi_bermain);
+        }
+
         // Gunakan withQueryString() agar pagination tetap mengingat kata kunci pencarian
         $athletes = $query->paginate(15)->withQueryString();
 
-        return view('admin.athletes.index', compact('athletes'));
+        // Ambil data unik untuk dropdown filter
+        $kelompokUmurList = Athlete::select('kelompok_umur')->distinct()->whereNotNull('kelompok_umur')->where('kelompok_umur', '!=', '')->pluck('kelompok_umur');
+        $kelompokLatihanList = Athlete::select('kelompok_latihan')->distinct()->whereNotNull('kelompok_latihan')->where('kelompok_latihan', '!=', '')->pluck('kelompok_latihan');
+        $posisiBermainList = Athlete::select('posisi_bermain')->distinct()->whereNotNull('posisi_bermain')->where('posisi_bermain', '!=', '')->pluck('posisi_bermain');
+
+        return view('admin.athletes.index', compact('athletes', 'kelompokUmurList', 'kelompokLatihanList', 'posisiBermainList'));
     }
 
     public function create()

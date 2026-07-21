@@ -29,22 +29,20 @@
 
             <div class="col-md-12">
                 <label class="form-label font-weight-bold">Kategori Transaksi <span class="text-danger">*</span></label>
-                <select name="kategori" id="kategori_kas" class="form-select font-weight-bold border-success" required onchange="toggleSiswaSection()">
-                    <optgroup label="💰 Tagihan Siswa (Pemasukan)">
-                        <option value="Iuran Uang Kas Bulanan Siswa" {{ $finance->kategori == 'Iuran Uang Kas Bulanan Siswa' ? 'selected' : '' }}>⭐ Iuran Uang Kas Bulanan Siswa</option>
-                        <option value="Biaya Pendaftaran Liga" {{ $finance->kategori == 'Biaya Pendaftaran Liga' ? 'selected' : '' }}>🏆 Biaya Pendaftaran Liga</option>
-                        <option value="Biaya Pembuatan Jersey" {{ $finance->kategori == 'Biaya Pembuatan Jersey' ? 'selected' : '' }}>👕 Biaya Pembuatan Jersey</option>
-                        <option value="Biaya Turnamen / Event" {{ $finance->kategori == 'Biaya Turnamen / Event' ? 'selected' : '' }}>🎯 Biaya Turnamen / Event</option>
-                        <option value="Pendaftaran Siswa Baru" {{ $finance->kategori == 'Pendaftaran Siswa Baru' ? 'selected' : '' }}>📋 Pendaftaran Siswa Baru</option>
-                        <option value="Donasi / Sponsorship / Subjek Lain" {{ $finance->kategori == 'Donasi / Sponsorship / Subjek Lain' ? 'selected' : '' }}>Donasi / Sponsorship / Lainnya</option>
-                    </optgroup>
-                    <optgroup label="🔴 Pengeluaran Operasional">
-                        <option value="Sewa Lapangan & Stadion" {{ $finance->kategori == 'Sewa Lapangan & Stadion' ? 'selected' : '' }}>Sewa Lapangan & Stadion</option>
-                        <option value="Honor Coach & Asisten" {{ $finance->kategori == 'Honor Coach & Asisten' ? 'selected' : '' }}>Honor Coach & Asisten</option>
-                        <option value="Pembelian Peralatan Latihan" {{ $finance->kategori == 'Pembelian Peralatan Latihan' ? 'selected' : '' }}>Pembelian Peralatan Latihan</option>
-                        <option value="Operasional Lain-lain" {{ $finance->kategori == 'Operasional Lain-lain' ? 'selected' : '' }}>Operasional Lain-lain</option>
-                    </optgroup>
-                </select>
+                <input type="text" name="kategori" id="kategori_kas" list="kategori_list" class="form-control font-weight-bold border-success" required oninput="toggleSiswaSection()" value="{{ $finance->kategori }}" placeholder="Ketik atau pilih kategori transaksi...">
+                <datalist id="kategori_list">
+                    <option value="Iuran Uang Kas Bulanan Siswa">
+                    <option value="Biaya Pendaftaran Liga">
+                    <option value="Biaya Pembuatan Jersey">
+                    <option value="Biaya Turnamen / Event">
+                    <option value="Pendaftaran Siswa Baru">
+                    <option value="Donasi / Sponsorship / Lainnya">
+                    <option value="Sewa Lapangan & Stadion">
+                    <option value="Honor Coach & Asisten">
+                    <option value="Pembelian Peralatan Latihan">
+                    <option value="Operasional Lain-lain">
+                </datalist>
+                <div class="form-text text-xs text-muted">Ketik <strong>Iuran Uang Kas Bulanan Siswa</strong> (atau kategori siswa lainnya) untuk memunculkan pilihan nama siswa.</div>
             </div>
 
             <div id="section_kas_siswa" class="col-12">
@@ -116,19 +114,20 @@
 <script>
     function toggleSiswaSection() {
         const jenis = document.getElementById('jenis_kas').value;
-        const kategori = document.getElementById('kategori_kas').value;
+        const kategori = document.getElementById('kategori_kas').value.toLowerCase();
         const sectionSiswa = document.getElementById('section_kas_siswa');
-        const inputSiswa = document.getElementById('athlete_id');
 
-        // Munculkan pilihan siswa hanya jika jenisnya pemasukan dan kategorinya Iuran Kas Siswa
-        const kategoriSiswa = [
-            'Iuran Uang Kas Bulanan Siswa',
-            'Biaya Pendaftaran Liga',
-            'Biaya Pembuatan Jersey',
-            'Biaya Turnamen / Event',
-            'Pendaftaran Siswa Baru'
+        // Munculkan pilihan siswa jika kategori yang diketik mengandung kata kunci berikut
+        const kataKunciSiswa = [
+            'iuran', 'kas', 'liga', 'jersey', 'turnamen', 'event', 'siswa', 'pendaftaran', 'tagihan'
         ];
-        if (jenis === 'pemasukan' && kategoriSiswa.includes(kategori)) {
+        
+        let isKategoriSiswa = false;
+        if (kategori.length >= 2) {
+            isKategoriSiswa = kataKunciSiswa.some(kat => kategori.includes(kat));
+        }
+
+        if (jenis === 'pemasukan' && isKategoriSiswa) {
             sectionSiswa.style.display = 'block';
         } else {
             sectionSiswa.style.display = 'none';
@@ -145,5 +144,17 @@
         toggleSiswaSection();
         toggleJatuhTempo();
     };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.getElementById("athlete_id")) {
+            new TomSelect("#athlete_id", {
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                }
+            });
+        }
+    });
 </script>
 @endsection
