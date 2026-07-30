@@ -20,10 +20,31 @@ class AttendanceController extends Controller
             $query->whereDate('tanggal', $request->tanggal);
         }
 
-        $attendances = $query->paginate(10);
+        if ($request->filled('status')) {
+            if ($request->status === 'alpa' || $request->status === 'alpha') {
+                $query->whereIn('status', ['alpa', 'alpha']);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        $attendances = $query->paginate(10)->withQueryString();
         $athletes = Athlete::orderBy('nama', 'asc')->get();
 
-        return view('admin.attendances.index', compact('attendances', 'athletes'));
+        $rekapQuery = Attendance::query();
+        if ($request->filled('tanggal')) {
+            $rekapQuery->whereDate('tanggal', $request->tanggal);
+        }
+
+        $rekap = [
+            'hadir' => (clone $rekapQuery)->where('status', 'hadir')->count(),
+            'izin'  => (clone $rekapQuery)->where('status', 'izin')->count(),
+            'sakit' => (clone $rekapQuery)->where('status', 'sakit')->count(),
+            'alpa'  => (clone $rekapQuery)->whereIn('status', ['alpa', 'alpha'])->count(),
+            'total' => (clone $rekapQuery)->count(),
+        ];
+
+        return view('admin.attendances.index', compact('attendances', 'athletes', 'rekap'));
     }
 
     public function store(Request $request)
@@ -56,6 +77,40 @@ class AttendanceController extends Controller
     public function show(Attendance $attendance)
     {
         return view('admin.attendances.barcode', compact('attendance'));
+    }
+
+    public function edit(Attendance $attendance)
+    {
+        $athletes = Athlete::orderBy('nama', 'asc')->get();
+        return view('admin.attendances.edit', compact('attendance', 'athletes'));
+    }
+
+    public function update(Request $request, Attendance $attendance)
+    {
+        $validated = $request->validate([
+            'athlete_id' => 'required|exists:athletes,id',
+            'tanggal' => 'required|date',
+            'status' => 'required|in:hadir,izin,sakit,alpa',
+            'foto_bukti' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('foto_bukti')) {
+            if ($attendance->foto_bukti && file_exists(public_path($attendance->foto_bukti))) {
+                unlink(public_path($attendance->foto_bukti));
+            }
+
+            $file = $request->file('foto_bukti');
+            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            if (!file_exists(public_path('uploads/foto_bukti'))) {
+                mkdir(public_path('uploads/foto_bukti'), 0755, true);
+            }
+            $file->move(public_path('uploads/foto_bukti'), $fileName);
+            $validated['foto_bukti'] = 'uploads/foto_bukti/' . $fileName;
+        }
+
+        $attendance->update($validated);
+
+        return redirect()->route('admin.attendances.index')->with('success', 'Data absensi berhasil diperbarui!');
     }
 
     public function destroy(Attendance $attendance)

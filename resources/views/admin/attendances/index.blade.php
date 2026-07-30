@@ -45,9 +45,12 @@
                 <h6 class="font-weight-bold mb-0">Riwayat Absensi & Output Barcode</h6>
                 <form action="{{ route('admin.attendances.index') }}" method="GET" class="d-flex gap-2">
                     <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ request('tanggal') }}">
+                    @if(request('status'))
+                        <input type="hidden" name="status" value="{{ request('status') }}">
+                    @endif
                     <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
-                    @if(request('tanggal'))
-                        <a href="{{ route('admin.attendances.index') }}" class="btn btn-sm btn-light">Reset</a>
+                    @if(request('tanggal') || request('status'))
+                        <a href="{{ route('admin.attendances.index') }}" class="btn btn-sm btn-light" title="Reset Semua Filter">Reset</a>
                     @endif
                 </form>
             </div>
@@ -63,6 +66,92 @@
         </a>
     </div>
 </div>
+
+            <!-- Ringkasan Stat Absensi -->
+            <div class="mb-4 p-3 bg-light rounded-3 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small font-weight-bold text-uppercase text-muted">
+                        <i class="bi bi-pie-chart-fill me-1 text-primary"></i> Ringkasan Kehadiran
+                        @if(request('tanggal'))
+                            <span class="badge bg-primary text-white ms-1">{{ \Carbon\Carbon::parse(request('tanggal'))->format('d/m/Y') }}</span>
+                        @else
+                            <span class="badge bg-secondary text-white ms-1">Semua Tanggal</span>
+                        @endif
+                        @if(request('status'))
+                            <span class="badge bg-dark text-white ms-1">Status: {{ ucfirst(request('status')) }}</span>
+                        @endif
+                    </span>
+                    <span class="small text-muted">Total: <strong>{{ $rekap['total'] }}</strong></span>
+                </div>
+                <div class="row g-2">
+                    <!-- Card Hadir -->
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2.5 px-3 rounded-3 bg-success bg-opacity-10 border {{ request('status') == 'hadir' ? 'border-success border-2 shadow-sm' : 'border-success border-opacity-25' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-success small font-weight-bold"><i class="bi bi-person-check-fill me-1"></i>Hadir</span>
+                                <a href="{{ route('admin.attendances.index', array_filter(['tanggal' => request('tanggal'), 'status' => request('status') == 'hadir' ? null : 'hadir'])) }}" 
+                                   class="btn btn-sm {{ request('status') == 'hadir' ? 'btn-success text-white' : 'btn-light text-success border-0' }} p-0 px-2 py-0.5 rounded-2 shadow-sm" 
+                                   title="{{ request('status') == 'hadir' ? 'Tampilkan semua status' : 'Lihat data murid Hadir' }}">
+                                    <i class="bi {{ request('status') == 'hadir' ? 'bi-eye-slash-fill' : 'bi-eye-fill' }}"></i>
+                                </a>
+                            </div>
+                            <div class="fs-4 font-weight-bold text-success text-center mt-1">{{ $rekap['hadir'] }}</div>
+                        </div>
+                    </div>
+                    <!-- Card Izin -->
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2.5 px-3 rounded-3 bg-info bg-opacity-10 border {{ request('status') == 'izin' ? 'border-info border-2 shadow-sm' : 'border-info border-opacity-25' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-info small font-weight-bold"><i class="bi bi-envelope-paper-fill me-1"></i>Izin</span>
+                                <a href="{{ route('admin.attendances.index', array_filter(['tanggal' => request('tanggal'), 'status' => request('status') == 'izin' ? null : 'izin'])) }}" 
+                                   class="btn btn-sm {{ request('status') == 'izin' ? 'btn-info text-white' : 'btn-light text-info border-0' }} p-0 px-2 py-0.5 rounded-2 shadow-sm" 
+                                   title="{{ request('status') == 'izin' ? 'Tampilkan semua status' : 'Lihat data murid Izin' }}">
+                                    <i class="bi {{ request('status') == 'izin' ? 'bi-eye-slash-fill' : 'bi-eye-fill' }}"></i>
+                                </a>
+                            </div>
+                            <div class="fs-4 font-weight-bold text-info text-center mt-1">{{ $rekap['izin'] }}</div>
+                        </div>
+                    </div>
+                    <!-- Card Sakit -->
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2.5 px-3 rounded-3 bg-warning bg-opacity-10 border {{ request('status') == 'sakit' ? 'border-warning border-2 shadow-sm' : 'border-warning border-opacity-25' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-dark small font-weight-bold"><i class="bi bi-bandaid-fill me-1"></i>Sakit</span>
+                                <a href="{{ route('admin.attendances.index', array_filter(['tanggal' => request('tanggal'), 'status' => request('status') == 'sakit' ? null : 'sakit'])) }}" 
+                                   class="btn btn-sm {{ request('status') == 'sakit' ? 'btn-warning text-dark' : 'btn-light text-dark border-0' }} p-0 px-2 py-0.5 rounded-2 shadow-sm" 
+                                   title="{{ request('status') == 'sakit' ? 'Tampilkan semua status' : 'Lihat data murid Sakit' }}">
+                                    <i class="bi {{ request('status') == 'sakit' ? 'bi-eye-slash-fill' : 'bi-eye-fill' }}"></i>
+                                </a>
+                            </div>
+                            <div class="fs-4 font-weight-bold text-dark text-center mt-1">{{ $rekap['sakit'] }}</div>
+                        </div>
+                    </div>
+                    <!-- Card Alpha -->
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2.5 px-3 rounded-3 bg-danger bg-opacity-10 border {{ (request('status') == 'alpa' || request('status') == 'alpha') ? 'border-danger border-2 shadow-sm' : 'border-danger border-opacity-25' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-danger small font-weight-bold"><i class="bi bi-person-x-fill me-1"></i>Alpha</span>
+                                <a href="{{ route('admin.attendances.index', array_filter(['tanggal' => request('tanggal'), 'status' => (request('status') == 'alpa' || request('status') == 'alpha') ? null : 'alpa'])) }}" 
+                                   class="btn btn-sm {{ (request('status') == 'alpa' || request('status') == 'alpha') ? 'btn-danger text-white' : 'btn-light text-danger border-0' }} p-0 px-2 py-0.5 rounded-2 shadow-sm" 
+                                   title="{{ (request('status') == 'alpa' || request('status') == 'alpha') ? 'Tampilkan semua status' : 'Lihat data murid Alpha' }}">
+                                    <i class="bi {{ (request('status') == 'alpa' || request('status') == 'alpha') ? 'bi-eye-slash-fill' : 'bi-eye-fill' }}"></i>
+                                </a>
+                            </div>
+                            <div class="fs-4 font-weight-bold text-danger text-center mt-1">{{ $rekap['alpa'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if(request('status'))
+            <div class="alert alert-info py-2 px-3 small d-flex justify-content-between align-items-center mb-3 rounded-3 border-info border-opacity-25">
+                <span><i class="bi bi-funnel-fill me-1"></i> Menampilkan data murid status <strong>{{ ucfirst(request('status')) }}</strong></span>
+                <a href="{{ route('admin.attendances.index', array_filter(['tanggal' => request('tanggal')])) }}" class="text-decoration-none text-info font-weight-bold">
+                    <i class="bi bi-x-circle-fill me-1"></i> Reset Filter Status
+                </a>
+            </div>
+            @endif
+
             <div class="table-responsive">
                 <table class="table table-hover align-middle border text-sm">
                     <thead class="table-light">
@@ -90,10 +179,73 @@
                                 <a href="{{ route('admin.attendances.show', $item->id) }}" target="_blank" class="btn btn-sm btn-dark" title="Lihat Barcode & Foto">
                                     <i class="bi bi-printer-fill text-warning me-1"></i> Barcode & Foto
                                 </a>
+                                <button type="button" class="btn btn-sm btn-warning text-dark ms-1 font-weight-bold" data-bs-toggle="modal" data-bs-target="#editAttendanceModal{{ $item->id }}" title="Edit / Ubah Absensi">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </button>
                                 <form action="{{ route('admin.attendances.destroy', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus absensi ini?');">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1"><i class="bi bi-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1" title="Hapus Absensi"><i class="bi bi-trash fs-6"></i></button>
                                 </form>
+
+                                <!-- Modal Edit Absensi #editAttendanceModal{{ $item->id }} -->
+                                <div class="modal fade text-start" id="editAttendanceModal{{ $item->id }}" tabindex="-1" aria-labelledby="editAttendanceModalLabel{{ $item->id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow">
+                                            <div class="modal-header bg-primary text-white">
+                                                <h6 class="modal-title font-weight-bold" id="editAttendanceModalLabel{{ $item->id }}">
+                                                    <i class="bi bi-pencil-square me-2"></i>Ubah Data Absensi Murid
+                                                </h6>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form action="{{ route('admin.attendances.update', $item->id) }}" method="POST" enctype="multipart/form-data">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="modal-body p-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label small font-weight-bold">Nama Murid / Atlet</label>
+                                                        <select name="athlete_id" class="form-select" required>
+                                                            @foreach($athletes as $atlet)
+                                                                <option value="{{ $atlet->id }}" {{ $item->athlete_id == $atlet->id ? 'selected' : '' }}>
+                                                                    {{ $atlet->nama }} (U-{{ $atlet->nomor_punggung ?? 'XX' }})
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label small font-weight-bold">Tanggal Latihan</label>
+                                                        <input type="date" name="tanggal" class="form-control" value="{{ \Carbon\Carbon::parse($item->tanggal)->format('Y-m-d') }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label small font-weight-bold">Status Kehadiran</label>
+                                                        <select name="status" class="form-select font-weight-bold" required>
+                                                            <option value="hadir" {{ $item->status == 'hadir' ? 'selected' : '' }}>🟢 Hadir di Lapangan</option>
+                                                            <option value="izin" {{ $item->status == 'izin' ? 'selected' : '' }}>🔵 Izin</option>
+                                                            <option value="sakit" {{ $item->status == 'sakit' ? 'selected' : '' }}>🟡 Sakit</option>
+                                                            <option value="alpa" {{ ($item->status == 'alpa' || $item->status == 'alpha') ? 'selected' : '' }}>🔴 Alpa (Tanpa Keterangan)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label small font-weight-bold">Foto Bukti / Kegiatan (Opsional)</label>
+                                                        @if($item->foto_bukti)
+                                                            <div class="mb-2">
+                                                                <img src="{{ asset($item->foto_bukti) }}" alt="Foto Bukti" class="rounded border shadow-sm" style="max-height: 90px; object-fit: cover;">
+                                                                <div class="small text-muted mt-1">Foto saat ini</div>
+                                                            </div>
+                                                        @endif
+                                                        <input type="file" name="foto_bukti" class="form-control form-control-sm" accept="image/*">
+                                                        <small class="text-muted">Biarkan kosong jika tidak merubah foto.</small>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer bg-light px-4 py-2">
+                                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                    <button type="submit" class="btn btn-sm btn-primary font-weight-bold px-3">
+                                                        <i class="bi bi-check-circle me-1"></i> Simpan Perubahan
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         @empty
