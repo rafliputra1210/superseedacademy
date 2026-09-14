@@ -170,8 +170,13 @@
         }
         /* Pengaturan Mode Cetak (Print) */
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
             body {
-                background: none;
+                background: none !important;
                 padding: 0;
                 margin: 0;
             }
@@ -180,7 +185,7 @@
             }
             .id-card {
                 box-shadow: none;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
             }
             .cards-container {
                 gap: 5mm;

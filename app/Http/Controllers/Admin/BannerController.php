@@ -18,7 +18,7 @@ class BannerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:5242880' // max 5 MB
+            'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120' // max 5 MB
         ]);
 
         if (Banner::count() >= 5) {
@@ -26,7 +26,15 @@ class BannerController extends Controller
         }
 
         $file = $request->file('image');
-        $fileName = time() . '_banner_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        $ext = strtolower($file->guessExtension() ?: 'jpg');
+        if (!in_array($ext, $allowedExtensions)) {
+            $ext = 'jpg';
+        }
+        $fileName = time() . '_banner_' . Str::random(12) . '.' . $ext;
+        if (!file_exists(public_path('uploads/banners'))) {
+            mkdir(public_path('uploads/banners'), 0755, true);
+        }
         $file->move(public_path('uploads/banners'), $fileName);
         $imagePath = 'uploads/banners/' . $fileName;
 
@@ -43,7 +51,7 @@ class BannerController extends Controller
     {
         $banner = Banner::findOrFail($id);
         if ($banner->image_path && file_exists(public_path($banner->image_path))) {
-            unlink(public_path($banner->image_path));
+            @unlink(public_path($banner->image_path));
         }
         $banner->delete();
 

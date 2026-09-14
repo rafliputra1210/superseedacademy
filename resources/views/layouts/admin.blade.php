@@ -49,18 +49,25 @@
             color: #cbd5e1; 
             transition: all 0.3s; 
             border-right: none;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
             position: sticky;
             top: 0;
             align-self: flex-start;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
         #sidebar .sidebar-header { 
             padding: 20px; background: var(--brand-navy); 
             border-bottom: 1px solid rgba(255,255,255,0.1); 
+            flex-shrink: 0;
         }
-        #sidebar ul.components { padding: 20px 0; }
+        #sidebar .sidebar-nav-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        #sidebar ul.components { padding: 15px 0; }
         #sidebar ul li a { 
             padding: 12px 24px; font-size: 0.95em; font-weight: 500; display: block; 
             color: #94a3b8; text-decoration: none; 
@@ -77,6 +84,28 @@
         .sidebar-section-title {
             font-size: 0.75rem; font-weight: 700; color: #64748b; 
             text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        #sidebar .sidebar-footer {
+            padding: 16px 20px;
+            background: rgba(15, 23, 42, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+        #sidebar .sidebar-footer .btn-logout {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            transition: all 0.2s ease-in-out;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        #sidebar .sidebar-footer .btn-logout:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
         }
 
         /* Main Content & Navbar */
@@ -106,9 +135,6 @@
                 z-index: 1050;
                 height: 100vh;
                 height: 100dvh; /* dynamic viewport height — fix iOS safari */
-                overflow-y: auto;
-                overflow-x: hidden;
-                -webkit-overflow-scrolling: touch;
                 top: 0;
                 left: 0;
                 overscroll-behavior: contain;
@@ -123,13 +149,13 @@
         }
 
         /* Scrollbar tipis & elegan untuk sidebar */
-        #sidebar::-webkit-scrollbar { width: 4px; }
-        #sidebar::-webkit-scrollbar-track { background: transparent; }
-        #sidebar::-webkit-scrollbar-thumb {
+        #sidebar .sidebar-nav-body::-webkit-scrollbar { width: 4px; }
+        #sidebar .sidebar-nav-body::-webkit-scrollbar-track { background: transparent; }
+        #sidebar .sidebar-nav-body::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.15);
             border-radius: 4px;
         }
-        #sidebar::-webkit-scrollbar-thumb:hover {
+        #sidebar .sidebar-nav-body::-webkit-scrollbar-thumb:hover {
             background: rgba(255,255,255,0.25);
         }
     </style>
@@ -141,87 +167,109 @@
 <div class="d-flex">
     <!-- Sidebar -->
     <nav id="sidebar">
-    <div class="sidebar-header d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-            <img src="{{ asset('images/logo.png') }}"
-                 alt="Superseed Logo"
-                 style="height: 40px; width: 40px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.05); padding: 2px;">
-            <div>
-                <div style="font-weight: 800; color: #fff; font-size: 0.95rem; letter-spacing: 0.5px; line-height: 1.1;">SUPERSEED</div>
-                <div style="font-size: 0.65rem; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase;">Academy Portal</div>
+        <div class="sidebar-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <img src="{{ asset('images/logo.png') }}"
+                     alt="Superseed Logo"
+                     style="height: 40px; width: 40px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.05); padding: 2px;">
+                <div>
+                    <div style="font-weight: 800; color: #fff; font-size: 0.95rem; letter-spacing: 0.5px; line-height: 1.1;">SUPERSEED</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase;">Academy Portal</div>
+                </div>
             </div>
+            <span class="badge px-2 py-1" style="font-size: 0.65rem; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;">ADMIN</span>
         </div>
-        <span class="badge px-2 py-1" style="font-size: 0.65rem; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;">ADMIN</span>
-    </div>
         
-        <ul class="list-unstyled components">
-            <li>
-                <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-grid-fill"></i> Dashboard
-                </a>
-            </li>
-            
-            <li class="px-4 mt-4 mb-2 sidebar-section-title">Manajemen Data</li>
-            <li>
-                <a href="{{ route('admin.athletes.index') }}" class="{{ request()->routeIs('admin.athletes.*') ? 'active' : '' }}">
-                    <i class="bi bi-people-fill"></i> Data Atlet (Murid)
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.coaches.index') }}" class="{{ request()->routeIs('admin.coaches.*') ? 'active' : '' }}">
-                    <i class="bi bi-person-badge-fill"></i> Data Coach
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.schedules.index') }}" class="{{ request()->routeIs('admin.schedules.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-event-fill"></i> Jadwal Latihan
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.attendances.index') }}" class="{{ request()->routeIs('admin.attendances.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check-fill"></i> Absensi Murid
-                </a>
-            </li>
-            
-            <li class="px-4 mt-4 mb-2 sidebar-section-title">Akademik & Keuangan</li>
-            <li>
-                <a href="{{ route('admin.finances.index') }}" class="{{ request()->routeIs('admin.finances.*') ? 'active' : '' }}">
-                    <i class="bi bi-wallet2"></i> Uang Kas & Keuangan
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.reports.index') }}" class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                    <i class="bi bi-award-fill"></i> Raport Murid
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.achievements.index') }}" class="{{ request()->routeIs('admin.achievements.*') ? 'active' : '' }}">
-                    <i class="bi bi-trophy-fill"></i> Prestasi Klub
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.announcements.index') }}" class="{{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">
-                    <i class="bi bi-megaphone-fill"></i> Pengumuman
-                </a>
-            </li>
-            
-            <li class="px-4 mt-4 mb-2 sidebar-section-title">Pengaturan Front-End</li>
-            <li>
-                <a href="{{ route('admin.banners.index') }}" class="{{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
-                    <i class="bi bi-images"></i> Banner Beranda
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.news.index') }}" class="{{ request()->routeIs('admin.news.*') ? 'active' : '' }}">
-                    <i class="bi bi-newspaper"></i> Berita & Artikel
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('admin.galleries.index') }}" class="{{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}">
-                    <i class="bi bi-camera-fill"></i> Galeri Foto
-                </a>
-            </li>
-        </ul>
+        <div class="sidebar-nav-body">
+            <ul class="list-unstyled components">
+                <li>
+                    <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                        <i class="bi bi-grid-fill"></i> Dashboard
+                    </a>
+                </li>
+                
+                <li class="px-4 mt-4 mb-2 sidebar-section-title">Manajemen Data</li>
+                <li>
+                    <a href="{{ route('admin.athletes.index') }}" class="{{ request()->routeIs('admin.athletes.*') ? 'active' : '' }}">
+                        <i class="bi bi-people-fill"></i> Data Atlet (Murid)
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.coaches.index') }}" class="{{ request()->routeIs('admin.coaches.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-badge-fill"></i> Data Coach
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.schedules.index') }}" class="{{ request()->routeIs('admin.schedules.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-event-fill"></i> Jadwal Latihan
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.attendances.index') }}" class="{{ request()->routeIs('admin.attendances.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-check-fill"></i> Absensi Murid
+                    </a>
+                </li>
+                
+                <li class="px-4 mt-4 mb-2 sidebar-section-title">Akademik & Keuangan</li>
+                <li>
+                    <a href="{{ route('admin.finances.index') }}" class="{{ request()->routeIs('admin.finances.*') ? 'active' : '' }}">
+                        <i class="bi bi-wallet2"></i> Uang Kas & Keuangan
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.reports.index') }}" class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                        <i class="bi bi-award-fill"></i> Raport Murid
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.achievements.index') }}" class="{{ request()->routeIs('admin.achievements.*') ? 'active' : '' }}">
+                        <i class="bi bi-trophy-fill"></i> Prestasi Klub
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.announcements.index') }}" class="{{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">
+                        <i class="bi bi-megaphone-fill"></i> Pengumuman
+                    </a>
+                </li>
+                
+                <li class="px-4 mt-4 mb-2 sidebar-section-title">Pengaturan Front-End</li>
+                <li>
+                    <a href="{{ route('admin.banners.index') }}" class="{{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
+                        <i class="bi bi-images"></i> Banner Beranda
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.news.index') }}" class="{{ request()->routeIs('admin.news.*') ? 'active' : '' }}">
+                        <i class="bi bi-newspaper"></i> Berita & Artikel
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.galleries.index') }}" class="{{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}">
+                        <i class="bi bi-camera-fill"></i> Galeri Foto
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tombol Keluar di bagian paling bawah Sidebar -->
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center mb-2 px-1">
+                <div class="rounded-circle d-flex align-items-center justify-content-center me-2 flex-shrink-0" style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); color: #60a5fa;">
+                    <i class="bi bi-person-fill fs-6"></i>
+                </div>
+                <div class="text-truncate">
+                    <div class="text-white fw-semibold small text-truncate" style="font-size: 0.825rem;">{{ Auth::user()->name ?? 'Administrator' }}</div>
+                    <div style="font-size: 0.68rem; color: #94a3b8;">Sesi Login Aktif</div>
+                </div>
+            </div>
+            <form action="{{ route('logout') }}" method="POST" class="w-100">
+                @csrf
+                <button type="submit" class="btn btn-logout w-100 d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-box-arrow-right fs-6"></i>
+                    <span>Keluar</span>
+                </button>
+            </form>
+        </div>
     </nav>
 
     <!-- Main Content Area -->
@@ -236,19 +284,12 @@
                 <span class="navbar-brand mb-0 h1 fs-5 fw-bold text-brand-navy">@yield('title', 'Dashboard')</span>
                 
                 <div class="d-flex align-items-center ms-auto">
-                    <div class="me-3 d-flex align-items-center">
+                    <div class="d-flex align-items-center">
                         <div class="bg-brand-light text-brand-blue rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
                             <i class="bi bi-person-fill"></i>
                         </div>
                         <span class="text-secondary small fw-medium d-none d-sm-inline">{{ Auth::user()->name ?? 'Administrator' }}</span>
                     </div>
-                    
-                    <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 border-0">
-                            <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
-                        </button>
-                    </form>
                 </div>
             </div>
         </nav>

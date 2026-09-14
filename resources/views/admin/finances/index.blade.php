@@ -3,25 +3,53 @@
 
 @section('content')
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card card-custom bg-success text-white p-3 shadow-sm border-0 h-100">
-            <span class="text-xs text-uppercase opacity-75 font-weight-bold"><i class="bi bi-box-arrow-in-down me-1"></i> Pemasukan Lunas</span>
-            <h3 class="mb-2 mt-1 font-weight-bold">+ Rp {{ number_format($totalPemasukanLunas, 0, ',', '.') }}</h3>
-            <div class="border-top border-light pt-2 mt-auto opacity-75 small font-weight-bold">
-                <i class="bi bi-hourglass-split me-1"></i> Belum Lunas (Piutang): Rp {{ number_format($totalPemasukanBelumLunas, 0, ',', '.') }}
+    @if($filterBulanAktif)
+    <div class="col-12">
+        <div class="alert alert-info border-0 shadow-sm py-2 px-3 mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-funnel-fill"></i>
+            <span class="small fw-bold">Menampilkan ringkasan keuangan periode: <strong>{{ $filterBulanAktif }}</strong></span>
+            <a href="{{ route('admin.finances.index') }}" class="ms-auto btn btn-sm btn-outline-info py-0"><i class="bi bi-x"></i> Lihat Semua</a>
+        </div>
+    </div>
+    @endif
+    <!-- 1. Saldo Awal -->
+    <div class="col-md-3">
+        <div class="card card-custom bg-warning bg-gradient text-dark p-3 shadow-sm border-0 h-100">
+            <span class="text-xs text-uppercase opacity-75 font-weight-bold"><i class="bi bi-wallet2 me-1"></i> Saldo Awal{{ $filterBulanAktif ? ' (Bawaan)' : '' }}</span>
+            <h4 class="mb-2 mt-1 font-weight-bold">Rp {{ number_format($saldoAwal, 0, ',', '.') }}</h4>
+            <div class="border-top border-dark border-opacity-25 pt-2 mt-auto opacity-75 text-xs font-weight-bold">
+                <i class="bi bi-arrow-left-right me-1"></i> Saldo Akhir Bulan Lalu
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card card-custom bg-danger text-white p-3 shadow-sm border-0">
-            <span class="text-xs text-uppercase opacity-75 font-weight-bold">Total Pengeluaran</span>
-            <h3 class="mb-0 mt-1 font-weight-bold">- Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</h3>
+    <!-- 2. Pemasukan Lunas -->
+    <div class="col-md-3">
+        <div class="card card-custom bg-success text-white p-3 shadow-sm border-0 h-100">
+            <span class="text-xs text-uppercase opacity-75 font-weight-bold"><i class="bi bi-box-arrow-in-down me-1"></i> Pemasukan Lunas</span>
+            <h4 class="mb-2 mt-1 font-weight-bold">+ Rp {{ number_format($totalPemasukanLunas, 0, ',', '.') }}</h4>
+            <div class="border-top border-light pt-2 mt-auto opacity-75 text-xs font-weight-bold">
+                <i class="bi bi-hourglass-split me-1"></i> Piutang: Rp {{ number_format($totalPemasukanBelumLunas, 0, ',', '.') }}
+            </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card card-custom bg-primary text-white p-3 shadow-sm border-0">
-            <span class="text-xs text-uppercase opacity-75 font-weight-bold">Saldo Kas Saat Ini</span>
-            <h3 class="mb-0 mt-1 font-weight-bold">Rp {{ number_format($saldoSekarang, 0, ',', '.') }}</h3>
+    <!-- 3. Total Pengeluaran -->
+    <div class="col-md-3">
+        <div class="card card-custom bg-danger text-white p-3 shadow-sm border-0 h-100">
+            <span class="text-xs text-uppercase opacity-75 font-weight-bold"><i class="bi bi-box-arrow-up-right me-1"></i> Total Pengeluaran</span>
+            <h4 class="mb-2 mt-1 font-weight-bold">- Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</h4>
+            <div class="border-top border-light pt-2 mt-auto opacity-75 text-xs font-weight-bold">
+                <i class="bi bi-calendar-event me-1"></i> {{ $filterBulanAktif ? 'Murni '.$filterBulanAktif : 'Murni Periode Ini' }}
+            </div>
+        </div>
+    </div>
+    <!-- 4. Saldo Akhir Kas -->
+    <div class="col-md-3">
+        <div class="card card-custom bg-primary text-white p-3 shadow-sm border-0 h-100">
+            <span class="text-xs text-uppercase opacity-75 font-weight-bold"><i class="bi bi-cash-stack me-1"></i> Saldo Akhir Kas</span>
+            <h4 class="mb-2 mt-1 font-weight-bold">Rp {{ number_format($saldoSekarang, 0, ',', '.') }}</h4>
+            <div class="border-top border-light pt-2 mt-auto opacity-75 text-xs font-weight-bold">
+                <i class="bi bi-calculator me-1"></i> Saldo Awal + Masuk - Keluar
+            </div>
         </div>
     </div>
 </div>
@@ -78,8 +106,15 @@
                 <option value="belum_lunas" {{ request('status') == 'belum_lunas' ? 'selected' : '' }}>Belum Lunas</option>
             </select>
             
-            <select name="bulan" id="filterBulan" class="form-select form-select-sm border-secondary shadow-sm" style="min-width: 140px;">
-                <option value="">Semua Bulan</option>
+            <select name="metode" class="form-select form-select-sm w-auto border-secondary shadow-sm">
+                <option value="">Semua Metode</option>
+                <option value="cash" {{ request('metode') == 'cash' ? 'selected' : '' }}>💵 Cash (Tunai)</option>
+                <option value="transfer" {{ request('metode') == 'transfer' ? 'selected' : '' }}>🏦 Transfer Bank</option>
+            </select>
+            
+            <select name="bulan" id="filterBulan" class="form-select form-select-sm border-secondary shadow-sm" style="min-width: 150px;">
+                <option value="" {{ (!request('bulan')) ? 'selected' : '' }}>Bulan Ini ({{ $filterBulanAktif ?: 'Otomatis' }})</option>
+                <option value="semua" {{ request('bulan') == 'semua' ? 'selected' : '' }}>-- Semua Bulan (Keseluruhan) --</option>
                 @foreach($listBulan as $bln)
                     <option value="{{ $bln }}" {{ request('bulan') == $bln ? 'selected' : '' }}>{{ $bln }}</option>
                 @endforeach
@@ -97,7 +132,7 @@
             </div>
             
             <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm"><i class="bi bi-funnel-fill me-1"></i> Terapkan</button>
-            @if(request('search') || request('jenis') || request('status') || request('bulan') || (request('per_page') && request('per_page') != 15))
+            @if(request('search') || request('jenis') || request('status') || request('metode') || request('bulan') || (request('per_page') && request('per_page') != 15))
                 <a href="{{ route('admin.finances.index') }}" class="btn btn-outline-danger btn-sm shadow-sm" title="Reset Semua Filter"><i class="bi bi-x-circle me-1"></i> Reset</a>
             @endif
         </form>
@@ -142,9 +177,28 @@
         @else
             <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1"><i class="bi bi-arrow-up-right me-1"></i>Pengeluaran</span>
         @endif
+        {{-- Badge Metode Pembayaran --}}
+        @if($item->metode_pembayaran == 'cash')
+            <span class="badge bg-secondary bg-opacity-10 text-secondary border mt-1 d-block"><i class="bi bi-cash-stack me-1"></i>Cash</span>
+        @elseif($item->metode_pembayaran == 'transfer')
+            <span class="badge bg-primary bg-opacity-10 text-primary border mt-1 d-block" title="{{ $item->nama_pengirim_transfer ? 'Atas Nama: '.$item->nama_pengirim_transfer : '' }}">
+                <i class="bi bi-bank me-1"></i>Transfer
+                @if($item->nama_pengirim_transfer)
+                    <small class="d-block text-truncate fw-semibold mt-0.5" style="max-width: 120px;">a.n. {{ $item->nama_pengirim_transfer }}</small>
+                @endif
+            </span>
+        @endif
     </td>
     <td class="text-end font-weight-bold text-nowrap {{ $item->jenis == 'pemasukan' ? 'text-success' : 'text-danger' }}">
         {{ $item->jenis == 'pemasukan' ? '+' : '-' }} Rp {{ number_format($item->nominal, 0, ',', '.') }}
+        {{-- Badge status lunas/belum lunas --}}
+        @if($item->jenis == 'pemasukan')
+            @if($item->status_bayar == 'lunas')
+                <span class="badge bg-success d-block mt-1 fw-normal"><i class="bi bi-check-circle me-1"></i>Lunas</span>
+            @else
+                <span class="badge bg-warning text-dark d-block mt-1 fw-normal"><i class="bi bi-hourglass-split me-1"></i>Belum Lunas</span>
+            @endif
+        @endif
     </td>
     <td class="text-end font-weight-bold text-dark bg-light text-nowrap">
         Rp {{ number_format($item->saldo_akhir, 0, ',', '.') }}

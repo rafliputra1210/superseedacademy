@@ -14,10 +14,20 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
+        $startDate = $request->input('start_date', $request->input('dari_tanggal'));
+        $endDate   = $request->input('end_date', $request->input('sampai_tanggal'));
+        $tanggal   = $request->input('tanggal');
+
         $query = Attendance::with('athlete')->latest();
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal', $request->tanggal);
+        if ($startDate && $endDate) {
+            $query->whereBetween('tanggal', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $query->whereDate('tanggal', '>=', $startDate);
+        } elseif ($endDate) {
+            $query->whereDate('tanggal', '<=', $endDate);
+        } elseif ($tanggal) {
+            $query->whereDate('tanggal', $tanggal);
         }
 
         if ($request->filled('status')) {
@@ -28,12 +38,28 @@ class AttendanceController extends Controller
             }
         }
 
-        $attendances = $query->paginate(10)->withQueryString();
+        $perPage = $request->input('per_page', 10);
+        if ($perPage === 'all') {
+            $perPage = 10000;
+        } else {
+            $perPage = (int) $perPage;
+            if ($perPage <= 0) {
+                $perPage = 10;
+            }
+        }
+
+        $attendances = $query->paginate($perPage)->withQueryString();
         $athletes = Athlete::orderBy('nama', 'asc')->get();
 
         $rekapQuery = Attendance::query();
-        if ($request->filled('tanggal')) {
-            $rekapQuery->whereDate('tanggal', $request->tanggal);
+        if ($startDate && $endDate) {
+            $rekapQuery->whereBetween('tanggal', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $rekapQuery->whereDate('tanggal', '>=', $startDate);
+        } elseif ($endDate) {
+            $rekapQuery->whereDate('tanggal', '<=', $endDate);
+        } elseif ($tanggal) {
+            $rekapQuery->whereDate('tanggal', $tanggal);
         }
 
         $rekap = [
@@ -53,12 +79,17 @@ class AttendanceController extends Controller
             'athlete_id' => 'required|exists:athletes,id',
             'tanggal' => 'required|date',
             'status' => 'required|in:hadir,izin,sakit,alpa',
-            'foto_bukti' => 'nullable|image|max:2048',
+            'foto_bukti' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         if ($request->hasFile('foto_bukti')) {
             $file = $request->file('foto_bukti');
-            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
             if (!file_exists(public_path('uploads/foto_bukti'))) {
                 mkdir(public_path('uploads/foto_bukti'), 0755, true);
             }
@@ -91,16 +122,21 @@ class AttendanceController extends Controller
             'athlete_id' => 'required|exists:athletes,id',
             'tanggal' => 'required|date',
             'status' => 'required|in:hadir,izin,sakit,alpa',
-            'foto_bukti' => 'nullable|image|max:2048',
+            'foto_bukti' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         if ($request->hasFile('foto_bukti')) {
             if ($attendance->foto_bukti && file_exists(public_path($attendance->foto_bukti))) {
-                unlink(public_path($attendance->foto_bukti));
+                @unlink(public_path($attendance->foto_bukti));
             }
 
             $file = $request->file('foto_bukti');
-            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
             if (!file_exists(public_path('uploads/foto_bukti'))) {
                 mkdir(public_path('uploads/foto_bukti'), 0755, true);
             }

@@ -26,14 +26,22 @@ class GalleryController extends Controller
             'judul'     => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'tanggal'   => 'required|date',
-            'foto'      => 'required|image|mimes:jpeg,png,jpg,webp|max:5242880', // max 5 MB
+            'foto'      => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         $validated['is_active'] = $request->has('is_active');
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
+            if (!file_exists(public_path('uploads/galleries'))) {
+                mkdir(public_path('uploads/galleries'), 0755, true);
+            }
             $file->move(public_path('uploads/galleries'), $fileName);
             $validated['foto'] = 'uploads/galleries/' . $fileName;
         }
@@ -54,17 +62,25 @@ class GalleryController extends Controller
             'judul'     => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'tanggal'   => 'required|date',
-            'foto'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5242880', // max 5 MB
+            'foto'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         $validated['is_active'] = $request->has('is_active');
 
         if ($request->hasFile('foto')) {
             if ($gallery->foto && file_exists(public_path($gallery->foto))) {
-                unlink(public_path($gallery->foto));
+                @unlink(public_path($gallery->foto));
             }
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
+            if (!file_exists(public_path('uploads/galleries'))) {
+                mkdir(public_path('uploads/galleries'), 0755, true);
+            }
             $file->move(public_path('uploads/galleries'), $fileName);
             $validated['foto'] = 'uploads/galleries/' . $fileName;
         } else {

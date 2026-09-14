@@ -70,7 +70,19 @@ class AthleteController extends Controller
 
     public function store(Request $request)
     {
-        // ... (validasi input sebelumnya tetap sama) ...
+        $validated = $request->validate([
+            'nama'             => 'required|string|max:255',
+            'kelompok_umur'    => 'required|string|max:50',
+            'kelompok_latihan' => 'required|string|max:50',
+            'nomor_punggung'   => 'nullable|string|max:10',
+            'tanggal_lahir'    => 'required|date',
+            'posisi_bermain'   => 'nullable|string|max:50',
+            'alamat'           => 'nullable|string',
+            'nomor_wa'         => 'nullable|string|max:20',
+            'nomor_wa_ortu'    => 'required|string|max:20',
+            'nama_wali'        => 'nullable|string|max:255',
+            'foto'             => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
+        ]);
 
         // GENERATE KODE BARCODE UNIK OTOMATIS (Contoh: SSA-2026-8912)
         $kodeBarcode = 'SSA-' . date('Y') . '-' . rand(1000, 9999);
@@ -79,7 +91,7 @@ class AthleteController extends Controller
         }
 
         // Kode auto-generate Username & Password
-        $cleanName = Str::slug($request->nama, '');
+        $cleanName = Str::slug($validated['nama'], '');
         $username = $cleanName;
         $counter = 1;
         while (User::query()->where('username', $username)->exists()) {
@@ -87,10 +99,10 @@ class AthleteController extends Controller
             $counter++;
         }
 
-        $password = \Carbon\Carbon::parse($request->tanggal_lahir)->format('dmY');
+        $password = \Carbon\Carbon::parse($validated['tanggal_lahir'])->format('dmY');
 
         $newUser = User::create([
-            'name'     => $request->nama_wali,
+            'name'     => $validated['nama_wali'] ?? ('Wali dari ' . $validated['nama']),
             'username' => $username,
             'password' => Hash::make($password),
             'role'     => 'wali_murid',
@@ -99,22 +111,30 @@ class AthleteController extends Controller
         $fotoPath = null;
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
+            if (!file_exists(public_path('uploads/athletes'))) {
+                mkdir(public_path('uploads/athletes'), 0755, true);
+            }
             $file->move(public_path('uploads/athletes'), $fileName);
             $fotoPath = 'uploads/athletes/' . $fileName;
         }
 
         Athlete::create([
-            'nama'             => $request->nama,
+            'nama'             => $validated['nama'],
             'kode_barcode'     => $kodeBarcode,
-            'kelompok_umur'    => $request->kelompok_umur,
-            'kelompok_latihan' => $request->kelompok_latihan,
-            'nomor_punggung'   => $request->nomor_punggung ?? null,
-            'tanggal_lahir'    => $request->tanggal_lahir,
-            'posisi_bermain'   => $request->posisi_bermain ?? null,
-            'nomor_wa_ortu'    => $request->nomor_wa_ortu,
-            'nomor_wa'         => $request->nomor_wa ?? null,
-            'alamat'           => $request->alamat ?? null,
+            'kelompok_umur'    => $validated['kelompok_umur'],
+            'kelompok_latihan' => $validated['kelompok_latihan'],
+            'nomor_punggung'   => $validated['nomor_punggung'] ?? null,
+            'tanggal_lahir'    => $validated['tanggal_lahir'],
+            'posisi_bermain'   => $validated['posisi_bermain'] ?? null,
+            'nomor_wa_ortu'    => $validated['nomor_wa_ortu'],
+            'nomor_wa'         => $validated['nomor_wa'] ?? null,
+            'alamat'           => $validated['alamat'] ?? null,
             'user_id'          => $newUser->id,
             'foto'             => $fotoPath,
         ]);
@@ -148,40 +168,108 @@ class AthleteController extends Controller
         return view('admin.athletes.print_all_cards', compact('athletes'));
     }
 
+    // METHOD BARU 3: Ekspor QR Code Atlet (Menampilkan Nama Atlet & Nomor Induk SSA-2026-xxx)
+    public function exportQr(Request $request)
+    {
+        $query = Athlete::orderBy('kelompok_umur', 'asc')->orderBy('nama', 'asc');
+
+        if ($request->filled('id')) {
+            $query->where('id', $request->id);
+        }
+
+        if ($request->filled('kelompok_umur')) {
+            $query->where('kelompok_umur', $request->kelompok_umur);
+        }
+
+        if ($request->filled('kelompok_latihan')) {
+            $query->where('kelompok_latihan', $request->kelompok_latihan);
+        }
+
+        if ($request->filled('cari')) {
+            $cari = $request->cari;
+            $query->where(function($q) use ($cari) {
+                $q->where('nama', 'like', "%{$cari}%")
+                  ->orWhere('kode_barcode', 'like', "%{$cari}%")
+                  ->orWhere('nomor_punggung', 'like', "%{$cari}%");
+            });
+        }
+
+        $athletes = $query->get();
+
+        // Pastikan semua siswa sudah punya kode barcode (nomor induk format SSA-2026-xxxx)
+        foreach ($athletes as $item) {
+            if (!$item->kode_barcode) {
+                $item->update(['kode_barcode' => 'SSA-' . date('Y') . '-' . rand(1000, 9999)]);
+            }
+        }
+
+        return view('admin.athletes.export_qr', compact('athletes'));
+    }
+
+    public function printQrCard(Athlete $athlete)
+    {
+        if (!$athlete->kode_barcode) {
+            $athlete->update(['kode_barcode' => 'SSA-' . date('Y') . '-' . rand(1000, 9999)]);
+        }
+
+        $athletes = collect([$athlete]);
+        return view('admin.athletes.export_qr', compact('athletes'));
+    }
+
     public function edit(Athlete $athlete)
     {
         $parents = User::query()->where('role', 'wali_murid')->get();
-        return view('admin.athletes.edit', compact('athlete', 'parents'));
+        $kelompokUmurList = Athlete::select('kelompok_umur')->distinct()->whereNotNull('kelompok_umur')->where('kelompok_umur', '!=', '')->pluck('kelompok_umur');
+        $kelompokLatihanList = Athlete::select('kelompok_latihan')->distinct()->whereNotNull('kelompok_latihan')->where('kelompok_latihan', '!=', '')->pluck('kelompok_latihan');
+        return view('admin.athletes.edit', compact('athlete', 'parents', 'kelompokUmurList', 'kelompokLatihanList'));
     }
 
     public function update(Request $request, Athlete $athlete)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'nomor_punggung' => 'nullable|string|max:10',
-            'tanggal_lahir' => 'nullable|date',
-            'posisi_bermain' => 'nullable|string|max:50',
-            'alamat' => 'nullable|string',
-            'nomor_wa' => 'nullable|string|max:20',
-            'nomor_wa_ortu' => 'required|string|max:20',
-            'user_id' => 'nullable|exists:users,id',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5242880', // max 5 GB
+            'nama'             => 'required|string|max:255',
+            'kelompok_umur'    => 'required|string|max:50',
+            'kelompok_latihan' => 'required|string|max:50',
+            'nomor_punggung'   => 'nullable|string|max:10',
+            'tanggal_lahir'    => 'nullable|date',
+            'posisi_bermain'   => 'nullable|string|max:50',
+            'alamat'           => 'nullable|string',
+            'nomor_wa'         => 'nullable|string|max:20',
+            'nomor_wa_ortu'    => 'required|string|max:20',
+            'user_id'          => 'nullable|exists:users,id',
+            'foto'             => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         if ($request->hasFile('foto')) {
             // Hapus foto lama jika ada
             if ($athlete->foto && file_exists(public_path($athlete->foto))) {
-                unlink(public_path($athlete->foto));
+                @unlink(public_path($athlete->foto));
             }
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
+            if (!file_exists(public_path('uploads/athletes'))) {
+                mkdir(public_path('uploads/athletes'), 0755, true);
+            }
             $file->move(public_path('uploads/athletes'), $fileName);
             $validated['foto'] = 'uploads/athletes/' . $fileName;
         } else {
             unset($validated['foto']);
         }
 
-        $athlete->update($validated);
+        // Reset password akun wali jika diisi di form edit
+        if ($request->filled('new_password_wali') && $athlete->user) {
+            $athlete->user->update([
+                'password' => Hash::make($request->new_password_wali)
+            ]);
+        }
+
+        $athlete->fill($validated);
+        $athlete->save();
 
         return redirect()->route('admin.athletes.index')->with('success', 'Data Atlet berhasil diperbarui!');
     }

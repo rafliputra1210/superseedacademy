@@ -63,7 +63,6 @@
                     <th class="text-center" style="width: 50px;">#</th>
                     <th>Tanggal Latihan</th>
                     <th class="text-center">Status Kehadiran</th>
-                    <th>Kode Barcode Bukti</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,13 +78,10 @@
                         @elseif($absen->status == 'sakit') <span class="badge bg-warning text-dark px-3 py-1 font-weight-bold">Sakit</span>
                         @else <span class="badge bg-danger px-3 py-1 font-weight-bold">Alpa</span> @endif
                     </td>
-                    <td>
-                        <code class="text-xs bg-light px-2 py-1 border rounded text-dark font-weight-bold">{{ $absen->kode_barcode }}</code>
-                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="4" class="text-center py-5 text-muted">
+                    <td colspan="3" class="text-center py-5 text-muted">
                         <i class="bi bi-folder2-open fs-2 d-block mb-1"></i>
                         Belum ada riwayat absensi yang dicatat oleh pelatih/admin.
                     </td>

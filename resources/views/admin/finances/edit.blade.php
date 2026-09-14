@@ -63,7 +63,7 @@
 
                     <div class="col-md-5">
                         <label class="form-label small font-weight-bold text-dark">Untuk Bulan Tagihan <span class="text-danger">*</span></label>
-                        <select name="bulan_tagihan" class="form-select">
+                        <select name="bulan_tagihan" id="bulan_tagihan" class="form-select">
                             <option value="">-- Pilih Bulan --</option>
                             @foreach(['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'] as $bulan)
                                 @php $valBulan = $bulan . ' ' . date('Y'); @endphp
@@ -85,11 +85,38 @@
 
             <div class="col-md-6">
                 <label class="form-label font-weight-bold">Status Pembayaran <span class="text-danger">*</span></label>
-                <select name="status_bayar" id="status_bayar" class="form-select font-weight-bold" required onchange="toggleJatuhTempo()">
+                <select name="status_bayar" id="status_bayar" class="form-select font-weight-bold" required onchange="toggleJatuhTempo(); toggleMetodePembayaran();">
                     <option value="lunas" {{ $finance->status_bayar == 'lunas' ? 'selected' : '' }}>✅ Lunas (Sudah Dibayar)</option>
                     <option value="belum_lunas" {{ $finance->status_bayar == 'belum_lunas' ? 'selected' : '' }}>🔴 Belum Lunas (Tagihan Terbuka)</option>
                 </select>
                 <div class="form-text text-xs">Pilih "Belum Lunas" untuk mencatat tagihan yang belum dibayar siswa.</div>
+            </div>
+
+            <div class="col-md-6" id="section_metode_pembayaran">
+                <label class="form-label font-weight-bold">Metode Pembayaran</label>
+                <div class="d-flex gap-2">
+                    <div class="flex-fill">
+                        <input type="radio" class="btn-check" name="metode_pembayaran" id="metode_cash" value="cash" autocomplete="off" onchange="toggleNamaTransfer()"
+                            {{ ($finance->metode_pembayaran == 'cash' || is_null($finance->metode_pembayaran)) ? 'checked' : '' }}>
+                        <label class="btn btn-outline-secondary w-100 fw-bold" for="metode_cash">
+                            <i class="bi bi-cash-stack me-1"></i> 💵 Cash (Tunai)
+                        </label>
+                    </div>
+                    <div class="flex-fill">
+                        <input type="radio" class="btn-check" name="metode_pembayaran" id="metode_transfer" value="transfer" autocomplete="off" onchange="toggleNamaTransfer()"
+                            {{ $finance->metode_pembayaran == 'transfer' ? 'checked' : '' }}>
+                        <label class="btn btn-outline-primary w-100 fw-bold" for="metode_transfer">
+                            <i class="bi bi-bank me-1"></i> 🏦 Transfer Bank
+                        </label>
+                    </div>
+                </div>
+                <div class="form-text text-xs text-muted mt-1">Pilih metode penerimaan atau pembayaran transaksi ini.</div>
+            </div>
+
+            <div class="col-md-6" id="section_nama_transfer" style="display:none;">
+                <label class="form-label font-weight-bold text-primary"><i class="bi bi-person-badge me-1"></i> Atas Nama / Pengirim Transfer</label>
+                <input type="text" name="nama_pengirim_transfer" id="nama_pengirim_transfer" class="form-control border-primary" value="{{ $finance->nama_pengirim_transfer }}" placeholder="Contoh: BCA a.n. Budi Santoso / Rekening Orang Tua">
+                <div class="form-text text-xs text-primary">Ketik nama pemilik rekening atau pengirim transfer (Opsional).</div>
             </div>
 
             <div class="col-md-6" id="section_jatuh_tempo" style="display:none;">
@@ -116,6 +143,7 @@
         const jenis = document.getElementById('jenis_kas').value;
         const kategori = document.getElementById('kategori_kas').value.toLowerCase();
         const sectionSiswa = document.getElementById('section_kas_siswa');
+        const inputBulanTagihan = document.getElementById('bulan_tagihan');
 
         // Munculkan pilihan siswa jika kategori yang diketik mengandung kata kunci berikut
         const kataKunciSiswa = [
@@ -129,8 +157,10 @@
 
         if (jenis === 'pemasukan' && isKategoriSiswa) {
             sectionSiswa.style.display = 'block';
+            if (inputBulanTagihan) inputBulanTagihan.disabled = false;
         } else {
             sectionSiswa.style.display = 'none';
+            if (inputBulanTagihan) inputBulanTagihan.disabled = true;
         }
     }
 
@@ -140,9 +170,27 @@
         section.style.display = (status === 'belum_lunas') ? 'block' : 'none';
     }
 
+    function toggleMetodePembayaran() {
+        const status = document.getElementById('status_bayar').value;
+        const section = document.getElementById('section_metode_pembayaran');
+        section.style.display = (status === 'belum_lunas') ? 'none' : 'block';
+        toggleNamaTransfer();
+    }
+
+    function toggleNamaTransfer() {
+        const status = document.getElementById('status_bayar').value;
+        const isTransfer = document.getElementById('metode_transfer').checked;
+        const sectionNamaTF = document.getElementById('section_nama_transfer');
+        if (sectionNamaTF) {
+            sectionNamaTF.style.display = (isTransfer && status === 'lunas') ? 'block' : 'none';
+        }
+    }
+
     window.onload = function() {
         toggleSiswaSection();
         toggleJatuhTempo();
+        toggleMetodePembayaran();
+        toggleNamaTransfer();
     };
 
     document.addEventListener("DOMContentLoaded", function () {

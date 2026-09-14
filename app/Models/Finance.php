@@ -15,6 +15,8 @@ class Finance extends Model
         'keterangan',
         'nominal',
         'status_bayar',
+        'metode_pembayaran',
+        'nama_pengirim_transfer',
         'tanggal_jatuh_tempo',
         'saldo_akhir',
     ];

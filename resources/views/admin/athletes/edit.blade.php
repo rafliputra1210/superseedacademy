@@ -34,11 +34,21 @@
             </div>
             <div class="col-md-6">
                 <label class="form-label font-weight-bold">Kelompok Umur <span class="text-danger">*</span></label>
-                <input type="text" name="kelompok_umur" class="form-control border-primary" value="{{ old('kelompok_umur', $athlete->kelompok_umur) }}" required placeholder="Contoh: U-12">
+                <input type="text" name="kelompok_umur" list="list_ku" class="form-control border-primary" value="{{ old('kelompok_umur', $athlete->kelompok_umur) }}" required placeholder="Contoh: U-12">
+                <datalist id="list_ku">
+                    @foreach($kelompokUmurList ?? [] as $ku)
+                        <option value="{{ $ku }}"></option>
+                    @endforeach
+                </datalist>
             </div>
             <div class="col-md-6">
                 <label class="form-label font-weight-bold">Kelompok Latihan <span class="text-danger">*</span></label>
-                <input type="text" name="kelompok_latihan" class="form-control border-success" value="{{ old('kelompok_latihan', $athlete->kelompok_latihan) }}" required placeholder="Contoh: Kelas Reguler">
+                <input type="text" name="kelompok_latihan" list="list_kl" class="form-control border-success" value="{{ old('kelompok_latihan', $athlete->kelompok_latihan) }}" required placeholder="Contoh: Kelas Reguler">
+                <datalist id="list_kl">
+                    @foreach($kelompokLatihanList ?? [] as $kl)
+                        <option value="{{ $kl }}"></option>
+                    @endforeach
+                </datalist>
             </div>
             <div class="col-md-6">
                 <label class="form-label font-weight-bold">Posisi Bermain</label>

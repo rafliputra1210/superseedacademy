@@ -132,8 +132,13 @@
         }
         /* Pengaturan Mode Cetak (Print) */
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
             body {
-                background: none;
+                background: none !important;
                 padding: 0;
                 margin: 0;
             }
@@ -142,7 +147,7 @@
             }
             .id-card {
                 box-shadow: none;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 margin: 0;
                 page-break-inside: avoid;
             }
@@ -183,6 +188,10 @@
         <!-- Biodata Singkat -->
         <div class="details-area">
             <h4 class="athlete-name">{{ Str::limit($athlete->nama, 22) }}</h4>
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px 8px; display: inline-block; margin: 2px 0 4px 0;">
+                <span style="font-size: 7px; color: #64748b; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: -2px;">Nomor Induk Atlet</span>
+                <span style="font-size: 11px; font-weight: 800; color: #047857; font-family: monospace;">{{ $athlete->kode_barcode }}</span>
+            </div>
             @if($athlete->nomor_punggung)
             <div class="jersey-block">
                 <span class="jersey-label">Nomor Punggung</span>

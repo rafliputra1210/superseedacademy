@@ -95,6 +95,7 @@
     .btn-act-edit  { background: #fff7ed; color: #d97706; border-color: #fed7aa; }
     .btn-act-del   { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
     .btn-act-print { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+    .btn-act-qr    { background: #faf5ff; color: #9333ea; border-color: #e9d5ff; }
     .btn-act-pay   { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 </style>
 
@@ -149,6 +150,10 @@
         <div class="d-flex flex-wrap align-items-center gap-2">
             <a href="{{ route('admin.athletes.create') }}" class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-2 px-3 py-2" style="background: #0A192F; border-color: #0A192F; border-radius: 8px;">
                 <i class="bi bi-plus-circle-fill"></i> <span>Tambah Siswa</span>
+            </a>
+
+            <a href="{{ route('admin.athletes.export-qr') }}" target="_blank" class="btn btn-purple btn-sm shadow-sm d-flex align-items-center gap-2 px-3 py-2" style="background: #7e22ce; color: #fff; border-color: #7e22ce; border-radius: 8px;">
+                <i class="bi bi-qr-code-scan text-white"></i> <span>Ekspor QR Barcode</span>
             </a>
 
             <a href="{{ route('admin.athletes.print-all') }}" target="_blank" class="btn btn-dark btn-sm shadow-sm d-flex align-items-center gap-2 px-3 py-2" style="border-radius: 8px;">
@@ -207,7 +212,14 @@
                             
                             {{-- Info --}}
                             <div>
-                                <div class="fw-bold text-dark mb-1" style="font-size: 0.925rem; line-height: 1.3;">{{ $item->nama }}</div>
+                                <div class="fw-bold text-dark mb-1 d-flex flex-wrap align-items-center gap-2" style="font-size: 0.925rem; line-height: 1.3;">
+                                    <span>{{ $item->nama }}</span>
+                                    @if($item->kode_barcode)
+                                    <code style="font-size: 0.725rem; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 1px 6px; border-radius: 4px; font-weight: 700;" title="Nomor Induk SSA-2026">
+                                        {{ $item->kode_barcode }}
+                                    </code>
+                                    @endif
+                                </div>
                                 <div class="d-flex flex-wrap gap-1">
                                     @if($item->kelompok_umur)
                                         <span class="chip chip-ku">{{ $item->kelompok_umur }}</span>
@@ -284,6 +296,9 @@
                             </a>
                             <a href="{{ route('admin.athletes.edit', $item->id) }}" class="btn-act btn-act-edit" title="Edit Siswa">
                                 <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <a href="{{ route('admin.athletes.export-qr') }}?id={{ $item->id }}" target="_blank" class="btn-act btn-act-qr" title="Ekspor QR Code SSA-2026">
+                                <i class="bi bi-qr-code"></i>
                             </a>
                             <a href="{{ route('admin.athletes.print-all') }}?id={{ $item->id }}" target="_blank" class="btn-act btn-act-print" title="Cetak ID Card">
                                 <i class="bi bi-printer-fill"></i>

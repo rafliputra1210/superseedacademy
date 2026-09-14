@@ -11,19 +11,26 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Akun Admin Utama
-        User::create([
-            'name' => 'Administrator Superseed',
-            'username' => 'admin',
-            'password' => Hash::make('password123'),
-            'role' => 'admin',
-        ]);
+        $adminPassword = env('ADMIN_PASSWORD', 'SSA_AdminSecure2026!');
+        User::updateOrCreate(
+            ['username' => 'admin'],
+            [
+                'name' => 'Administrator Superseed',
+                'password' => Hash::make($adminPassword),
+                'role' => 'admin',
+            ]
+        );
 
-        // 2. Akun Orang Tua / Wali Murid Dummy
-        User::create([
-            'name' => 'Budi Santoso (Ortu Davi)',
-            'username' => 'ortu_davi',
-            'password' => Hash::make('password123'),
-            'role' => 'wali_murid',
-        ]);
+        // 2. Akun Orang Tua / Wali Murid Dummy (Hanya untuk testing)
+        if (app()->environment('local', 'testing')) {
+            User::updateOrCreate(
+                ['username' => 'ortu_davi'],
+                [
+                    'name' => 'Budi Santoso (Ortu Davi)',
+                    'password' => Hash::make('ortu_SSA2026!'),
+                    'role' => 'wali_murid',
+                ]
+            );
+        }
     }
 }

@@ -35,7 +35,15 @@ class AchievementController extends Controller
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
+            if (!file_exists(public_path('uploads/achievements'))) {
+                mkdir(public_path('uploads/achievements'), 0755, true);
+            }
             $file->move(public_path('uploads/achievements'), $fileName);
             $validated['foto'] = 'uploads/achievements/' . $fileName;
         }
@@ -64,10 +72,18 @@ class AchievementController extends Controller
 
         if ($request->hasFile('foto')) {
             if ($achievement->foto && file_exists(public_path($achievement->foto))) {
-                unlink(public_path($achievement->foto));
+                @unlink(public_path($achievement->foto));
             }
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::random(20) . '.' . $ext;
+            if (!file_exists(public_path('uploads/achievements'))) {
+                mkdir(public_path('uploads/achievements'), 0755, true);
+            }
             $file->move(public_path('uploads/achievements'), $fileName);
             $validated['foto'] = 'uploads/achievements/' . $fileName;
         } else {

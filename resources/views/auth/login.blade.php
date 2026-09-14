@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Superseed Academy</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
@@ -36,6 +39,16 @@
         </div>
 
         <div class="p-8">
+            <!-- Alert Warning / Session Expired -->
+            @if (session('warning'))
+                <div class="bg-amber-50 border border-amber-200 text-amber-700 p-4 mb-6 rounded-lg text-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0 text-amber-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span>{{ session('warning') }}</span>
+                </div>
+            @endif
+
             <!-- Alert Error -->
             @if ($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-600 p-4 mb-6 rounded-lg text-sm">

@@ -1,0 +1,34 @@
+# ==============================================================================
+# ROOT SECURITY .HTACCESS FOR LARAVEL ON SHARED HOSTING (cPanel / Apache)
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. BLOKIR MUTLAK AKSES KE FILE SENSITIF (.env, .git, artisan, composer, dll.)
+    RewriteRule ^\.env - [F,L,NC]
+    RewriteRule ^\.git - [F,L,NC]
+    RewriteRule ^composer\.(json|lock) - [F,L,NC]
+    RewriteRule ^package\.(json|lock) - [F,L,NC]
+    RewriteRule ^artisan - [F,L,NC]
+    RewriteRule ^phpunit\.xml - [F,L,NC]
+    RewriteRule ^storage/logs/.* - [F,L,NC]
+
+    # 2. Redirect jika DocumentRoot server berada di folder root ini (bukan di /public)
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Matikan Directory Browsing / Indexing
+Options -Indexes
+
+# Blokir akses ke file tersembunyi (dotfiles) dan ekstensi sensitif
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "(?i)\.(env|log|sql|sqlite|bak|config|ini|sh|yml|yaml|md|lock)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

@@ -43,12 +43,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // --- RUTE EKSPOR EXCEL (Wajib ditaruh di atas resource) ---
     Route::get('/athletes/export/excel', [AthleteController::class, 'exportExcel'])->name('athletes.export');
     Route::get('/coaches/export/excel', [CoachController::class, 'exportExcel'])->name('coaches.export');
+    Route::post('/coaches/import/excel', [CoachController::class, 'importExcel'])->name('coaches.import');
 
     // Route CRUD Data Atlet (Murid)
     // --- RUTE EKSPOR, IMPOR & CETAK KARTU ---
     Route::post('/athletes/import/excel', [AthleteController::class, 'importExcel'])->name('athletes.import');
     
-    // Rute Baru Cetak ID Card Barcode:
+    // Rute Baru Cetak ID Card Barcode & QR Code:
+    Route::get('/athletes/export/qr', [AthleteController::class, 'exportQr'])->name('athletes.export-qr');
+    Route::get('/athletes/{athlete}/print-qr', [AthleteController::class, 'printQrCard'])->name('athletes.print-qr-card');
     Route::get('/athletes/print-all-cards', [AthleteController::class, 'printAllCards'])->name('athletes.print-all');
     Route::get('/athletes/{athlete}/print-card', [AthleteController::class, 'printCard'])->name('athletes.print-card');
 
@@ -84,6 +87,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Rute Pengaturan Banner
     Route::resource('/banners', BannerController::class)->except(['create', 'show', 'edit', 'update']);
     Route::post('/banners/{id}/toggle', [BannerController::class, 'toggleActive'])->name('banners.toggle');
+
+    // Rute CRUD Berita, Galeri & Prestasi
+    Route::resource('/news', NewsController::class);
+    Route::resource('/galleries', GalleryController::class);
+    Route::resource('/achievements', AchievementController::class);
 });
 
 // --- RUTE MODUL 4: PORTAL WALI MURID (Frontend User) ---
@@ -95,37 +103,9 @@ Route::middleware(['auth', 'role:wali_murid'])->prefix('portal-wali')->name('wal
     Route::get('/pengumuman', [WaliPortalController::class, 'pengumuman'])->name('pengumuman');
 });
 
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    
-    // --- RUTE EKSPOR & IMPOR EXCEL ---
-    Route::get('/athletes/export/excel', [AthleteController::class, 'exportExcel'])->name('athletes.export');
-    Route::post('/athletes/import/excel', [AthleteController::class, 'importExcel'])->name('athletes.import'); // <-- Rute Upload Siswa
-    
-    Route::get('/coaches/export/excel', [CoachController::class, 'exportExcel'])->name('coaches.export');
-    Route::post('/coaches/import/excel', [CoachController::class, 'importExcel'])->name('coaches.import'); // <-- Rute Upload Coach
-
-    // --- RUTE RESOURCE CRUD ---
-    Route::resource('/athletes', AthleteController::class);
-    Route::resource('/coaches', CoachController::class);
-});
 Route::controller(LandingPageController::class)->group(function () {
     Route::get('/', 'index')->name('landing.home');
-    Route::get('/berita', 'news')->name('landing.news'); // <-- Daftar Berita Publik
-    Route::get('/berita/{slug}', 'newsDetail')->name('landing.news.detail'); // <-- Detail Baca Berita
-    Route::post('/berita/{slug}/comment', 'storeComment')->name('landing.news.comment'); // <-- Tambah route komentar
-    // ... rute publik lainnya (profil-coach, jadwal, dll) ...
-});
-
-// --- 2. RUTE ADMIN (Tambahkan di dalam grup middleware Admin) ---
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    // ... rute admin sebelumnya ...
-    
-    // Rute CRUD Berita & Artikel
-    Route::resource('/news', NewsController::class);
-    
-    // Rute CRUD Galeri
-    Route::resource('/galleries', GalleryController::class);
-    
-    // Rute CRUD Prestasi
-    Route::resource('/achievements', AchievementController::class);
+    Route::get('/berita', 'news')->name('landing.news');
+    Route::get('/berita/{slug}', 'newsDetail')->name('landing.news.detail');
+    Route::post('/berita/{slug}/comment', 'storeComment')->name('landing.news.comment');
 });

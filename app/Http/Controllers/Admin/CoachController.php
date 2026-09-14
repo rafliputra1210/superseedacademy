@@ -33,12 +33,20 @@ class CoachController extends Controller
             'detail_lisensi' => 'nullable|string|max:100',
             'referensi' => 'nullable|string',
             'alamat' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:5242880', // max 5 GB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::slug($validated['nama'], '_') . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::slug($validated['nama'], '_') . '_' . Str::random(10) . '.' . $ext;
+            if (!file_exists(public_path('uploads/coaches'))) {
+                mkdir(public_path('uploads/coaches'), 0755, true);
+            }
             $file->move(public_path('uploads/coaches'), $fileName);
             $validated['foto'] = 'uploads/coaches/' . $fileName;
         }
@@ -62,15 +70,23 @@ class CoachController extends Controller
             'detail_lisensi' => 'nullable|string|max:100',
             'referensi' => 'nullable|string',
             'alamat' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:5242880', // max 5 GB
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         if ($request->hasFile('foto')) {
             if ($coach->foto && file_exists(public_path($coach->foto))) {
-                unlink(public_path($coach->foto));
+                @unlink(public_path($coach->foto));
             }
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::slug($validated['nama'], '_') . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::slug($validated['nama'], '_') . '_' . Str::random(10) . '.' . $ext;
+            if (!file_exists(public_path('uploads/coaches'))) {
+                mkdir(public_path('uploads/coaches'), 0755, true);
+            }
             $file->move(public_path('uploads/coaches'), $fileName);
             $validated['foto'] = 'uploads/coaches/' . $fileName;
         } else {

@@ -33,23 +33,29 @@
             </div>
         </div>
 
-        <div class="row mb-4">
-            <div class="col-4">
-                <div class="p-3 bg-success text-white rounded border border-success">
+        <div class="row mb-4 text-center">
+            <div class="col-3">
+                <div class="p-2.5 bg-light rounded border">
+                    <span class="text-uppercase text-muted small fw-bold">Saldo Awal</span>
+                    <h5 class="mb-0 fw-bold text-dark">Rp {{ number_format($saldoAwal, 0, ',', '.') }}</h5>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-2.5 bg-success text-white rounded border border-success">
                     <span class="text-uppercase small fw-bold">Pemasukan Lunas</span>
-                    <h4 class="mb-0 fw-bold">+ Rp {{ number_format($totalPemasukanLunas, 0, ',', '.') }}</h4>
+                    <h5 class="mb-0 fw-bold">+ Rp {{ number_format($totalPemasukanLunas, 0, ',', '.') }}</h5>
                 </div>
             </div>
-            <div class="col-4">
-                <div class="p-3 bg-danger text-white rounded border border-danger">
+            <div class="col-3">
+                <div class="p-2.5 bg-danger text-white rounded border border-danger">
                     <span class="text-uppercase small fw-bold">Total Pengeluaran</span>
-                    <h4 class="mb-0 fw-bold">- Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</h4>
+                    <h5 class="mb-0 fw-bold">- Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</h5>
                 </div>
             </div>
-            <div class="col-4">
-                <div class="p-3 bg-primary text-white rounded border border-primary">
-                    <span class="text-uppercase small fw-bold">Saldo Kas</span>
-                    <h4 class="mb-0 fw-bold">Rp {{ number_format($saldoSekarang, 0, ',', '.') }}</h4>
+            <div class="col-3">
+                <div class="p-2.5 bg-primary text-white rounded border border-primary">
+                    <span class="text-uppercase small fw-bold">Saldo Akhir</span>
+                    <h5 class="mb-0 fw-bold">Rp {{ number_format($saldoSekarang, 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>

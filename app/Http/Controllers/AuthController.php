@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -25,12 +27,24 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        $throttleKey = Str::lower($request->input('username')) . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors([
+                'username' => 'Terlalu banyak percobaan login yang gagal. Silakan coba lagi dalam ' . $seconds . ' detik.',
+            ])->onlyInput('username');
+        }
+
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
             
             // Redirect sesuai role
             return $this->redirectBasedOnRole(Auth::user()->role);
         }
+
+        RateLimiter::hit($throttleKey, 60);
 
         return back()->withErrors([
             'username' => 'Username atau password yang Anda masukkan salah.',

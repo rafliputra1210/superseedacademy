@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # Blokir akses langsung ke file tersembunyi (.env, .git, dll.)
+    RewriteRule ^\.(?!well-known).* - [F,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -23,3 +26,12 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Matikan Directory Browsing
+Options -Indexes
+
+# Blokir file sensitif
+<FilesMatch "(?i)\.(env|log|sql|sqlite|bak|config|ini|sh|yml|yaml|md|lock)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

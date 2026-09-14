@@ -1,0 +1,29 @@
+# ==============================================================================
+# SECURITY RULE: BLOCK SCRIPT EXECUTION IN UPLOADS DIRECTORY
+# ==============================================================================
+# Matikan eksekusi script PHP, Perl, Python, CGI, Shell, dll. di seluruh folder upload.
+# File hanya boleh disajikan sebagai media/gambar statis.
+
+# 1. Nonaktifkan engine PHP (Apache & LiteSpeed)
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+# 2. Blokir akses ke file skrip berbahaya
+<FilesMatch "(?i)\.(php|php2|php3|php4|php5|php7|php8|phtml|phar|phps|pht|shtml|cgi|pl|py|sh|bash|exe|bat|cmd|dll|jsp|asp|aspx)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# 3. Matikan Handler & MIME type untuk file skrip
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .shtml .cgi .pl .py
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .shtml .cgi .pl .py
+
+# 4. Larang eksekusi skrip CGI & cegah index directory
+Options -ExecCGI -Indexes

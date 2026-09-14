@@ -27,7 +27,7 @@ class NewsController extends Controller
             'kategori'  => 'required|string|max:100',
             'konten'    => 'required|string',
             'tanggal'   => 'required|date',
-            'foto'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5242880', // max 5 MB
+            'foto'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         // Auto-generate slug dari judul agar URL ramah SEO
@@ -36,7 +36,15 @@ class NewsController extends Controller
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::slug($validated['judul'], '_') . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::slug($validated['judul'], '_') . '_' . Str::random(8) . '.' . $ext;
+            if (!file_exists(public_path('uploads/news'))) {
+                mkdir(public_path('uploads/news'), 0755, true);
+            }
             $file->move(public_path('uploads/news'), $fileName);
             $validated['foto'] = 'uploads/news/' . $fileName;
         }
@@ -58,7 +66,7 @@ class NewsController extends Controller
             'kategori'  => 'required|string|max:100',
             'konten'    => 'required|string',
             'tanggal'   => 'required|date',
-            'foto'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5242880', // max 5 MB
+            'foto'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // max 5 MB
         ]);
 
         // Update slug jika judul berubah
@@ -70,10 +78,18 @@ class NewsController extends Controller
 
         if ($request->hasFile('foto')) {
             if ($news->foto && file_exists(public_path($news->foto))) {
-                unlink(public_path($news->foto));
+                @unlink(public_path($news->foto));
             }
             $file = $request->file('foto');
-            $fileName = time() . '_' . Str::slug($validated['judul'], '_') . '.' . $file->getClientOriginalExtension();
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            if (!in_array($ext, $allowedExtensions)) {
+                $ext = 'jpg';
+            }
+            $fileName = time() . '_' . Str::slug($validated['judul'], '_') . '_' . Str::random(8) . '.' . $ext;
+            if (!file_exists(public_path('uploads/news'))) {
+                mkdir(public_path('uploads/news'), 0755, true);
+            }
             $file->move(public_path('uploads/news'), $fileName);
             $validated['foto'] = 'uploads/news/' . $fileName;
         } else {
