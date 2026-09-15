@@ -17,8 +17,13 @@
 
 # 2. Blokir akses ke file skrip berbahaya
 <FilesMatch "(?i)\.(php|php2|php3|php4|php5|php7|php8|phtml|phar|phps|pht|shtml|cgi|pl|py|sh|bash|exe|bat|cmd|dll|jsp|asp|aspx)$">
-    Order Deny,Allow
-    Deny from all
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Deny,Allow
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # 3. Matikan Handler & MIME type untuk file skrip

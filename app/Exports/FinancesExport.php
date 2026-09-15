@@ -50,17 +50,37 @@ class FinancesExport implements FromCollection, WithHeadings, WithMapping, Shoul
     {
         $this->rowNumber++;
 
+        $keterangan = $finance->kategori . ($finance->keterangan ? ' - ' . $finance->keterangan : '');
+        $namaSiswa = $finance->athlete ? $finance->athlete->nama : '-';
+
         return [
             $this->rowNumber,
             \Carbon\Carbon::parse($finance->tanggal)->format('d/m/Y'),
             $finance->jenis == 'pemasukan' ? 'Pemasukan' : 'Pengeluaran',
-            $finance->kategori . ($finance->keterangan ? ' - ' . $finance->keterangan : ''),
-            $finance->athlete ? $finance->athlete->nama : '-',
+            $this->sanitizeFormula($keterangan),
+            $this->sanitizeFormula($namaSiswa),
             $finance->status_bayar == 'lunas' ? 'Lunas' : 'Belum Lunas',
-            $finance->bulan_tagihan ?: '-',
+            $this->sanitizeFormula((string)($finance->bulan_tagihan ?: '-')),
             $finance->nominal,
             $finance->saldo_akhir,
         ];
+    }
+
+    /**
+     * Sanitasi pencegahan Formula Injection (CWE-1236) pada file Excel/CSV.
+     */
+    private function sanitizeFormula(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $triggers = ['=', '+', '-', '@', "\t", "\r"];
+        if (in_array(substr($value, 0, 1), $triggers, true)) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 
     public function styles(Worksheet $sheet)

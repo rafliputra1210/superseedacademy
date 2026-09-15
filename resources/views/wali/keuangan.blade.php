@@ -187,7 +187,14 @@
                     <td class="small text-nowrap">{{ \Carbon\Carbon::parse($kas->tanggal)->format('d M Y') }}</td>
                     <td>
                         <strong class="text-dark d-block">{{ $kas->kategori }}</strong>
-                        <span class="text-muted small">{{ $kas->keterangan ?: '-' }}</span>
+                        @php
+                            $isMyChild = $kas->athlete_id && $myAthletes->pluck('id')->contains($kas->athlete_id);
+                            $displayKeterangan = $kas->keterangan ?: '-';
+                            if (!$isMyChild && $kas->athlete_id && !empty($kas->keterangan)) {
+                                $displayKeterangan = preg_replace('/a\.n\.\s*.+$/i', 'a.n. Siswa Akademi (Privasi Terlindungi)', $kas->keterangan);
+                            }
+                        @endphp
+                        <span class="text-muted small">{{ $displayKeterangan }}</span>
                     </td>
                     <td class="text-center">
                         @if($kas->jenis == 'pemasukan')

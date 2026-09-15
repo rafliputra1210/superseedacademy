@@ -63,7 +63,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     // --- RUTE KAMERA SCAN ABSENSI ---
     Route::get('/attendances/scan', [AttendanceController::class, 'scan'])->name('attendances.scan');
-    Route::post('/attendances/scan-store', [AttendanceController::class, 'storeScan'])->name('attendances.scan-store');
+    Route::post('/attendances/scan-store', [AttendanceController::class, 'storeScan'])->middleware('throttle:60,1')->name('attendances.scan-store');
 
     Route::resource('/attendances', AttendanceController::class);
     // Rute Keuangan, Pengumuman, dan Raport
@@ -101,11 +101,13 @@ Route::middleware(['auth', 'role:wali_murid'])->prefix('portal-wali')->name('wal
     Route::get('/raport', [WaliPortalController::class, 'raport'])->name('raport');
     Route::get('/keuangan', [WaliPortalController::class, 'keuangan'])->name('keuangan');
     Route::get('/pengumuman', [WaliPortalController::class, 'pengumuman'])->name('pengumuman');
+    Route::get('/profil', [WaliPortalController::class, 'profile'])->name('profile');
+    Route::post('/profil/ubah-password', [WaliPortalController::class, 'updatePassword'])->middleware('throttle:5,1')->name('profile.update-password');
 });
 
 Route::controller(LandingPageController::class)->group(function () {
     Route::get('/', 'index')->name('landing.home');
     Route::get('/berita', 'news')->name('landing.news');
     Route::get('/berita/{slug}', 'newsDetail')->name('landing.news.detail');
-    Route::post('/berita/{slug}/comment', 'storeComment')->name('landing.news.comment');
+    Route::post('/berita/{slug}/comment', 'storeComment')->middleware('throttle:5,1')->name('landing.news.comment');
 });

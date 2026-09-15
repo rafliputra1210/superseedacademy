@@ -45,18 +45,35 @@ class AthletesExport implements FromCollection, WithHeadings, WithMapping, Shoul
 
         return [
             $this->rowNumber,
-            $athlete->nama,
-            $athlete->kelompok_umur ?? 'U-12',            // <-- Mengambil data Kelompok Umur
-            $athlete->kelompok_latihan ?? 'Kelas Reguler', // <-- Mengambil data Kelompok Latihan
-            $athlete->nomor_punggung,
-            $athlete->posisi_bermain ?? 'Belum ditentukan',
+            $this->sanitizeFormula($athlete->nama),
+            $this->sanitizeFormula($athlete->kelompok_umur ?? 'U-12'),
+            $this->sanitizeFormula($athlete->kelompok_latihan ?? 'Kelas Reguler'),
+            $this->sanitizeFormula((string)($athlete->nomor_punggung ?? '-')),
+            $this->sanitizeFormula($athlete->posisi_bermain ?? 'Belum ditentukan'),
             $athlete->tanggal_lahir ? \Carbon\Carbon::parse($athlete->tanggal_lahir)->format('Y-m-d') : '-',
-            $athlete->nomor_wa_ortu,
-            $athlete->nomor_wa ?: '-',
-            $athlete->alamat ?: '-',
-            $athlete->user ? $athlete->user->username : 'Belum Ada Akun',
+            $this->sanitizeFormula((string)$athlete->nomor_wa_ortu),
+            $this->sanitizeFormula((string)($athlete->nomor_wa ?: '-')),
+            $this->sanitizeFormula((string)($athlete->alamat ?: '-')),
+            $this->sanitizeFormula($athlete->user ? $athlete->user->username : 'Belum Ada Akun'),
             \Carbon\Carbon::parse($athlete->created_at)->format('Y-m-d'),
         ];
+    }
+
+    /**
+     * Sanitasi pencegahan Formula Injection (CWE-1236) pada file Excel/CSV.
+     */
+    private function sanitizeFormula(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $triggers = ['=', '+', '-', '@', "\t", "\r"];
+        if (in_array(substr($value, 0, 1), $triggers, true)) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 
     // 3. STYLING HEADER: Warna hijau khas Superseed Academy

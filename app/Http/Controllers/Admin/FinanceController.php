@@ -8,6 +8,8 @@ use App\Models\Athlete;
 use Illuminate\Http\Request;
 use App\Exports\FinancesExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class FinanceController extends Controller
 {
@@ -185,6 +187,13 @@ class FinanceController extends Controller
         $validated = $request->validate([
             'ids'   => 'required|array',
             'ids.*' => 'exists:finances,id',
+        ]);
+
+        Log::warning('Hapus massal riwayat transaksi keuangan dijalankan oleh admin', [
+            'admin_id'      => Auth::id(),
+            'deleted_count' => count($validated['ids']),
+            'ids'           => $validated['ids'],
+            'ip'            => $request->ip(),
         ]);
 
         Finance::destroy($validated['ids']);

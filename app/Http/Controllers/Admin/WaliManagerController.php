@@ -7,6 +7,8 @@ use App\Models\Athlete;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class WaliManagerController extends Controller
@@ -64,6 +66,18 @@ class WaliManagerController extends Controller
     // Fitur 1-Klik Reset Password ke Default
     public function resetPassword(User $user)
     {
+        // Proteksi Broken Access Control: Hanya akun role 'wali_murid' yang dapat direset
+        if ($user->role !== 'wali_murid') {
+            Log::warning('Percobaan reset password tidak sah untuk akun non-wali murid', [
+                'target_user_id'  => $user->id,
+                'target_username' => $user->username,
+                'target_role'     => $user->role,
+                'admin_user_id'   => Auth::id(),
+                'ip'              => request()->ip()
+            ]);
+            return redirect()->back()->with('error', 'Akses ditolak: Hanya akun wali murid yang dapat direset melalui fitur ini!');
+        }
+
         $password = 'superseed123';
         $athlete = $user->athletes()->first();
         if ($athlete && $athlete->tanggal_lahir) {
@@ -72,6 +86,13 @@ class WaliManagerController extends Controller
 
         $user->update([
             'password' => Hash::make($password)
+        ]);
+
+        Log::info('Password akun wali murid berhasil direset oleh admin', [
+            'target_user_id'  => $user->id,
+            'target_username' => $user->username,
+            'admin_user_id'   => Auth::id(),
+            'ip'              => request()->ip()
         ]);
 
         return redirect()->back()->with('success', "Password untuk akun (@{$user->username}) berhasil direset kembali menjadi: {$password}");

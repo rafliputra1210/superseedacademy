@@ -141,6 +141,11 @@
                             <i class="bi bi-megaphone-fill me-1"></i> Pengumuman
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom {{ request()->routeIs('wali.profile') ? 'active' : '' }}" href="{{ route('wali.profile') }}">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Akun & Sandi
+                        </a>
+                    </li>
                     <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
                         <form action="{{ route('logout') }}" method="POST" class="d-inline">
                             @csrf

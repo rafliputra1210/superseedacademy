@@ -25,6 +25,9 @@ class RoleMiddleware
             } elseif ($userRole === 'wali_murid') {
                 return redirect()->route('wali.dashboard');
             }
+
+            // Fail-closed: Tolak akses jika role tidak dikenal atau tidak berizin
+            abort(403, 'Akses ditolak. Peran Anda tidak memiliki izin untuk mengakses halaman ini.');
         }
 
         return $next($request);

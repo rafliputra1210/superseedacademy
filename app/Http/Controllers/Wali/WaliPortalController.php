@@ -10,6 +10,8 @@ use App\Models\Finance;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class WaliPortalController extends Controller
 {
@@ -117,5 +119,42 @@ class WaliPortalController extends Controller
     {
         $announcements = Announcement::query()->where('is_active', true)->latest('created_at')->paginate(10);
         return view('wali.pengumuman', compact('announcements'));
+    }
+
+    // 5. Profil & Manajemen Keamanan Akun Mandiri
+    public function profile()
+    {
+        $user = Auth::user();
+        $myAthletes = $user->athletes;
+        return view('wali.profile', compact('user', 'myAthletes'));
+    }
+
+    // 6. Proses Ubah Password Mandiri oleh Wali Murid
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password'         => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ], [
+            'current_password.required'         => 'Password saat ini wajib diisi.',
+            'current_password.current_password' => 'Password saat ini yang Anda masukkan salah.',
+            'password.required'                 => 'Password baru wajib diisi.',
+            'password.min'                      => 'Password baru minimal harus 8 karakter.',
+            'password.confirmed'                => 'Konfirmasi password baru tidak cocok.',
+            'password.different'                => 'Password baru tidak boleh sama dengan password saat ini.',
+        ]);
+
+        $user = Auth::user();
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        Log::info('Wali murid berhasil memperbarui password mandiri', [
+            'user_id'  => $user->id,
+            'username' => $user->username,
+            'ip'       => $request->ip(),
+        ]);
+
+        return redirect()->route('wali.profile')->with('success', 'Password akun Anda berhasil diperbarui! Gunakan password baru ini untuk login berikutnya.');
     }
 }

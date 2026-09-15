@@ -22,13 +22,24 @@
 # Matikan Directory Browsing / Indexing
 Options -Indexes
 
-# Blokir akses ke file tersembunyi (dotfiles) dan ekstensi sensitif
+# Blokir akses ke file tersembunyi (dotfiles)
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
-<FilesMatch "(?i)\.(env|log|sql|sqlite|bak|config|ini|sh|yml|yaml|md|lock)$">
-    Order allow,deny
-    Deny from all
+# Blokir akses ke file konfigurasi, database, backup, dan arsip
+<FilesMatch "(?i)\.(env|log|sql|sqlite|sqlite3|db|bak|backup|config|ini|sh|yml|yaml|md|lock|zip|tar|gz|tgz|rar|7z|stackdump)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>

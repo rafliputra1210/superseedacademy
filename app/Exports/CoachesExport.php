@@ -39,14 +39,31 @@ class CoachesExport implements FromCollection, WithHeadings, WithMapping, Should
 
         return [
             $this->rowNumber,
-            $coach->nama,
-            strtoupper($coach->status_lisensi),
-            $coach->detail_lisensi ?: 'Tidak Ada / Asisten',
-            $coach->nomor_wa ?: '-',
-            $coach->referensi ?: '-',
-            $coach->alamat ?: '-',
+            $this->sanitizeFormula($coach->nama),
+            $this->sanitizeFormula(strtoupper($coach->status_lisensi)),
+            $this->sanitizeFormula($coach->detail_lisensi ?: 'Tidak Ada / Asisten'),
+            $this->sanitizeFormula((string)($coach->nomor_wa ?: '-')),
+            $this->sanitizeFormula((string)($coach->referensi ?: '-')),
+            $this->sanitizeFormula((string)($coach->alamat ?: '-')),
             \Carbon\Carbon::parse($coach->created_at)->format('d/m/Y'),
         ];
+    }
+
+    /**
+     * Sanitasi pencegahan Formula Injection (CWE-1236) pada file Excel/CSV.
+     */
+    private function sanitizeFormula(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $triggers = ['=', '+', '-', '@', "\t", "\r"];
+        if (in_array(substr($value, 0, 1), $triggers, true)) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 
     public function styles(Worksheet $sheet)
