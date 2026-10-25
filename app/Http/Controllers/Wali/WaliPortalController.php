@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Athlete;
 use App\Models\Attendance;
 use App\Models\Report;
+use App\Models\Raport;
 use App\Models\Finance;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
@@ -63,13 +64,15 @@ class WaliPortalController extends Controller
         $athlete = $myAthletes->where('id', $selectedId)->first() ?? $myAthletes->first();
 
         $reports = [];
+        $finalRaports = [];
 
         if ($athlete) {
-            // Tarik data raport evaluasi
+            // Tarik data raport asesmen dan raport akumulasi bulanan
             $reports = Report::query()->where('athlete_id', $athlete->id)->latest()->get();
+            $finalRaports = Raport::where('athlete_id', $athlete->id)->where('status_publish', 'Published')->latest()->get();
         }
 
-        return view('wali.raport', compact('myAthletes', 'athlete', 'reports'));
+        return view('wali.raport', compact('myAthletes', 'athlete', 'reports', 'finalRaports'));
     }
 
     // 3. Transparansi Laporan Keuangan (Uang Kas) & Riwayat Pembayaran Anak

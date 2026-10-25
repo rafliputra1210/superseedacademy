@@ -54,10 +54,14 @@ class AuthController extends Controller
     // Fungsi helper untuk pengalihan role
     private function redirectBasedOnRole($role)
     {
-        if ($role === 'admin') {
-            return redirect()->intended(route('admin.dashboard'));
-        }
-        return redirect()->intended(route('wali.dashboard'));
+        if (Auth::user()->role === 'admin') {
+    return redirect()->route('admin.dashboard');
+} elseif (Auth::user()->role === 'wali_murid') {
+    return redirect()->route('wali.dashboard');
+} elseif (Auth::user()->role === 'asesor') {
+    // Arahkan asesor ke halaman daftar penilaian
+    return redirect()->route('asesor.penilaian.index'); 
+}
     }
 
     // Proses Logout

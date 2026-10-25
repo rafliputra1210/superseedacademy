@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Super Seed Academy</title>
+    <title>@yield('title', (Auth::check() && Auth::user()->role === 'asesor') ? 'Portal Asesor' : 'Admin Panel') - Super Seed Academy</title>
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <!-- Fonts -->
@@ -177,11 +177,23 @@
                     <div style="font-size: 0.65rem; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase;">Academy Portal</div>
                 </div>
             </div>
-            <span class="badge px-2 py-1" style="font-size: 0.65rem; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;">ADMIN</span>
+            @if(Auth::check() && Auth::user()->role === 'asesor')
+                <span class="badge px-2 py-1" style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; letter-spacing: 0.5px;">ASESOR</span>
+            @else
+                <span class="badge px-2 py-1" style="font-size: 0.65rem; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; letter-spacing: 0.5px;">ADMIN</span>
+            @endif
         </div>
         
         <div class="sidebar-nav-body">
             <ul class="list-unstyled components">
+            @if(Auth::check() && Auth::user()->role === 'asesor')
+                <li class="px-4 mt-2 mb-2 sidebar-section-title">Menu Penilaian</li>
+                <li>
+                    <a href="{{ route('asesor.penilaian.index') }}" class="{{ request()->routeIs('asesor.penilaian.*') ? 'active' : '' }}">
+                        <i class="bi bi-clipboard-check-fill"></i> Penilaian Atlet
+                    </a>
+                </li>
+            @else
                 <li>
                     <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <i class="bi bi-grid-fill"></i> Dashboard
@@ -222,6 +234,16 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.asesor_manager.index') }}" class="{{ request()->routeIs('admin.asesor_manager.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-check-fill"></i> Manajemen Asesor
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.assessment_categories.index') }}" class="{{ request()->routeIs('admin.assessment_categories.*') ? 'active' : '' }}">
+                        <i class="bi bi-sliders2"></i> Kategori Penilaian
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.achievements.index') }}" class="{{ request()->routeIs('admin.achievements.*') ? 'active' : '' }}">
                         <i class="bi bi-trophy-fill"></i> Prestasi Klub
                     </a>
@@ -248,6 +270,7 @@
                         <i class="bi bi-camera-fill"></i> Galeri Foto
                     </a>
                 </li>
+            @endif
             </ul>
         </div>
 
@@ -259,7 +282,7 @@
                 </div>
                 <div class="text-truncate">
                     <div class="text-white fw-semibold small text-truncate" style="font-size: 0.825rem;">{{ Auth::user()->name ?? 'Administrator' }}</div>
-                    <div style="font-size: 0.68rem; color: #94a3b8;">Sesi Login Aktif</div>
+                    <div style="font-size: 0.68rem; color: #94a3b8;">{{ (Auth::check() && Auth::user()->role === 'asesor') ? 'Asesor Penilai' : 'Sesi Login Aktif' }}</div>
                 </div>
             </div>
             <form action="{{ route('logout') }}" method="POST" class="w-100">
@@ -281,7 +304,7 @@
                     <i class="bi bi-list fs-5 text-secondary"></i>
                 </button>
                 
-                <span class="navbar-brand mb-0 h1 fs-5 fw-bold text-brand-navy">@yield('title', 'Dashboard')</span>
+                <span class="navbar-brand mb-0 h1 fs-5 fw-bold text-brand-navy">@yield('title', (Auth::check() && Auth::user()->role === 'asesor') ? 'Portal Penilaian Asesor' : 'Dashboard')</span>
                 
                 <div class="d-flex align-items-center ms-auto">
                     <div class="d-flex align-items-center">

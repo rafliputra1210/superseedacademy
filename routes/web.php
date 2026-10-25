@@ -16,6 +16,9 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\AchievementController;
+use App\Http\Controllers\Asesor\AsesorController;
+use App\Http\Controllers\Admin\AsesorManagerController;
+use App\Http\Controllers\Admin\AssessmentCategoryController;
 
 
 
@@ -75,6 +78,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('/announcements', AnnouncementController::class);
     Route::patch('/reports/{report}/toggle-archive', [ReportController::class, 'toggleArchive'])->name('reports.toggle-archive');
     Route::resource('/reports', ReportController::class);
+    Route::get('/reports/rekap-asesor', [ReportController::class, 'rekapAsesor'])->name('reports.rekap');
+    Route::post('/reports/generate-final/{athlete}', [ReportController::class, 'generateFinalRaport'])->name('reports.generate-final');
 
     // Rute CRUD Jadwal Latihan
     Route::resource('/schedules', ScheduleController::class);
@@ -92,6 +97,19 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('/news', NewsController::class);
     Route::resource('/galleries', GalleryController::class);
     Route::resource('/achievements', AchievementController::class);
+
+    // Rute Manajemen Akun Asesor
+    Route::get('/manajemen-asesor', [AsesorManagerController::class, 'index'])->name('asesor_manager.index');
+    Route::post('/manajemen-asesor', [AsesorManagerController::class, 'store'])->name('asesor_manager.store');
+    Route::delete('/manajemen-asesor/{user}', [AsesorManagerController::class, 'destroy'])->name('asesor_manager.destroy');
+
+    // Rute Kategori Penilaian Raport Custom
+    Route::resource('/assessment-categories', AssessmentCategoryController::class)
+        ->names('assessment_categories')
+        ->parameters(['assessment-categories' => 'category'])
+        ->except(['create', 'show', 'edit']);
+    Route::post('/assessment-categories/{category}/toggle', [AssessmentCategoryController::class, 'toggleActive'])->name('assessment_categories.toggle');
+
 });
 
 // --- RUTE MODUL 4: PORTAL WALI MURID (Frontend User) ---
@@ -110,4 +128,9 @@ Route::controller(LandingPageController::class)->group(function () {
     Route::get('/berita', 'news')->name('landing.news');
     Route::get('/berita/{slug}', 'newsDetail')->name('landing.news.detail');
     Route::post('/berita/{slug}/comment', 'storeComment')->middleware('throttle:5,1')->name('landing.news.comment');
+});
+Route::middleware(['auth', 'role:asesor'])->prefix('asesor')->name('asesor.')->group(function () {
+    Route::get('/penilaian', [App\Http\Controllers\Asesor\AsesorController::class, 'index'])->name('penilaian.index');
+    Route::get('/penilaian/{athlete}/create', [App\Http\Controllers\Asesor\AsesorController::class, 'create'])->name('penilaian.create');
+    Route::post('/penilaian/{athlete}', [App\Http\Controllers\Asesor\AsesorController::class, 'store'])->name('penilaian.store');
 });

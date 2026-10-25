@@ -24,6 +24,7 @@ class AthletesExport implements FromCollection, WithHeadings, WithMapping, Shoul
     {
         return [
             'No.',
+            'Nomor Induk (Barcode)',
             'Nama Lengkap Siswa',
             'Kelompok Umur',       // <-- Kolom Baru (Contoh: U-12)
             'Kelompok Latihan',    // <-- Kolom Baru (Contoh: Kelas Prestasi)
@@ -45,6 +46,7 @@ class AthletesExport implements FromCollection, WithHeadings, WithMapping, Shoul
 
         return [
             $this->rowNumber,
+            $athlete->kode_barcode,
             $this->sanitizeFormula($athlete->nama),
             $this->sanitizeFormula($athlete->kelompok_umur ?? 'U-12'),
             $this->sanitizeFormula($athlete->kelompok_latihan ?? 'Kelas Reguler'),

@@ -29,6 +29,75 @@
     </div>
 </div>
 
+@if(isset($finalRaports) && $finalRaports->isNotEmpty())
+    <div class="mb-4">
+        <h5 class="fw-bold text-brand-navy mb-3">
+            <i class="bi bi-award-fill text-warning me-2"></i>Raport Evaluasi Bulanan (Asesor)
+        </h5>
+        <div class="row g-3">
+            @foreach($finalRaports as $rf)
+                <div class="col-md-6">
+                    <div class="card card-custom p-4 bg-white border shadow-sm h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <div>
+                                <span class="badge bg-primary px-3 py-1.5 fw-bold font-monospace">{{ $rf->periode }}</span>
+                            </div>
+                            <span class="badge px-2.5 py-1 rounded-pill" style="background-color: #dcfce7; color: #15803d; font-weight: 600;">
+                                <i class="bi bi-check-circle-fill me-1"></i> Diterbitkan
+                            </span>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            @if(!empty($rf->scores_summary) && is_array($rf->scores_summary))
+                                @foreach($rf->scores_summary as $item)
+                                    <div class="col-6">
+                                        <div class="p-2.5 rounded-3 bg-light border d-flex justify-content-between align-items-center">
+                                            <span class="small fw-semibold text-dark">{{ $item['nama'] ?? 'Kategori' }}</span>
+                                            <span class="badge bg-brand-navy fs-6">{{ $item['nilai'] ?? 0 }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="col-6">
+                                    <div class="p-2.5 rounded-3 bg-light border d-flex justify-content-between align-items-center">
+                                        <span class="small fw-semibold text-dark">Teknik</span>
+                                        <span class="badge bg-brand-navy fs-6">{{ $rf->nilai_teknik_final }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2.5 rounded-3 bg-light border d-flex justify-content-between align-items-center">
+                                        <span class="small fw-semibold text-dark">Taktik</span>
+                                        <span class="badge bg-brand-navy fs-6">{{ $rf->nilai_taktik_final }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2.5 rounded-3 bg-light border d-flex justify-content-between align-items-center">
+                                        <span class="small fw-semibold text-dark">Fisik</span>
+                                        <span class="badge bg-brand-navy fs-6">{{ $rf->nilai_fisik_final }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2.5 rounded-3 bg-light border d-flex justify-content-between align-items-center">
+                                        <span class="small fw-semibold text-dark">Mental</span>
+                                        <span class="badge bg-brand-navy fs-6">{{ $rf->nilai_mental_final }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($rf->catatan_pelatih)
+                            <div class="mt-2 p-3 bg-light rounded-3">
+                                <div class="small fw-bold text-dark mb-1"><i class="bi bi-chat-left-text me-1 text-primary"></i> Catatan & Rekomendasi Asesor:</div>
+                                <div class="small text-secondary fst-italic">{{ $rf->catatan_pelatih }}</div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
+
 @php
     $tabs = [
         [
