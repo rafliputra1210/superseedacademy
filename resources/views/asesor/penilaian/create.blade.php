@@ -6,7 +6,7 @@
 <div class="container-fluid px-0" style="max-width: 900px;">
     <!-- Breadcrumb & Back Button -->
     <div class="mb-4">
-        <a href="{{ route('asesor.penilaian.index') }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 mb-3">
+        <a href="{{ route('asesor.penilaian.index', ['periode' => $periodeSekarang]) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 mb-3">
             <i class="bi bi-arrow-left"></i>
             <span>Kembali ke Daftar Atlet</span>
         </a>
@@ -16,8 +16,8 @@
                 <p class="text-secondary small mb-0">Silakan input penilaian aspek performa dan catatan evaluasi.</p>
             </div>
             <div>
-                <span class="badge bg-primary px-3 py-2 rounded-pill font-monospace">
-                    <i class="bi bi-calendar-check me-1"></i> {{ $periodeSekarang }}
+                <span class="badge bg-primary px-3 py-2 rounded-pill font-monospace fs-6 shadow-sm">
+                    <i class="bi bi-calendar-check me-1"></i> Periode: {{ $periodeSekarang }}
                 </span>
             </div>
         </div>
@@ -32,7 +32,7 @@
             <div>
                 <h5 class="fw-bold text-brand-navy mb-1">{{ $athlete->nama }}</h5>
                 <div class="d-flex flex-wrap align-items-center gap-2 text-secondary small">
-                    <span>ID: #{{ str_pad($athlete->id, 4, '0', STR_PAD_LEFT) }}</span>
+                    <span class="font-monospace fw-semibold text-secondary">{{ $athlete->kode_barcode ?: ('ID: #' . str_pad($athlete->id, 4, '0', STR_PAD_LEFT)) }}</span>
                     <span>&bull;</span>
                     <span class="badge bg-light text-dark border">KU-{{ $athlete->kelompok_umur }}</span>
                     <span>&bull;</span>
@@ -45,58 +45,132 @@
     <!-- Form Penilaian -->
     <div class="card card-custom shadow-sm border-0">
         <div class="card-header bg-white py-3 border-bottom">
-            <div class="d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold mb-0 text-brand-navy">
-                    <i class="bi bi-sliders text-brand-blue me-2"></i>Komponen Penilaian (Skala 0 - 100)
-                </h6>
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                <div>
+                    <h6 class="fw-bold mb-1 text-brand-navy">
+                        <i class="bi bi-ui-checks text-brand-blue me-2"></i>Komponen Penilaian Aspek (Skala 1 – 5)
+                    </h6>
+                    <div class="text-muted small">
+                        <strong>Keterangan Skala:</strong> 1 = Sangat Kurang &bull; 2 = Kurang &bull; 3 = Cukup &bull; 4 = Baik &bull; 5 = Sangat Baik
+                    </div>
+                </div>
                 <small class="text-muted"><span class="text-danger">*</span> Wajib diisi</small>
             </div>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-3 p-md-4">
             <form action="{{ route('asesor.penilaian.store', $athlete->id) }}" method="POST">
                 @csrf
                 
                 <!-- Input Periode (Hidden) -->
                 <input type="hidden" name="periode_bulan" value="{{ $periodeSekarang }}">
 
-                <!-- Dynamic Categories -->
-                <div class="row g-4 mb-4">
+                <!-- Loop per Kategori Penilaian -->
+                <div class="d-flex flex-column gap-4 mb-4">
                     @forelse($categories as $index => $cat)
                         @php
-                            $currentScore = null;
-                            if (old('scores.' . $cat->id) !== null) {
-                                $currentScore = old('scores.' . $cat->id);
-                            } elseif ($nilaiSebelumnya) {
-                                $currentScore = $nilaiSebelumnya->getCategoryScore($cat->id, $cat->nama);
-                            }
+                            $subs = $cat->sub_points_list;
+                            $prevSubs = $nilaiSebelumnya ? $nilaiSebelumnya->getCategorySubPoints($cat->id) : [];
                         @endphp
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark d-flex justify-content-between align-items-center">
-                                <span>{{ $index + 1 }}. Nilai {{ $cat->nama }} <span class="text-danger">*</span></span>
-                                <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.7rem;">0 - 100</span>
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-secondary"><i class="bi bi-star-fill text-warning"></i></span>
-                                <input type="number" name="scores[{{ $cat->id }}]" 
-                                       class="form-control @error('scores.' . $cat->id) is-invalid @enderror" 
-                                       min="0" max="100" placeholder="Masukkan skor (0 - 100)"
-                                       value="{{ $currentScore }}" required>
-                            </div>
-                            @if($cat->deskripsi)
-                                <div class="form-text text-muted small mt-1" style="font-size: 0.75rem;">
-                                    <i class="bi bi-info-circle me-1"></i>{{ $cat->deskripsi }}
+                        <div class="card border shadow-none rounded-3 overflow-hidden">
+                            <!-- Category Title (Header B. Penilaian ...) -->
+                            <div class="card-header py-2.5 px-3 bg-light border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0 fs-6">
+                                        <span class="text-primary me-1">{{ chr(65 + $index) }}.</span> Penilaian {{ $cat->nama }}
+                                    </h6>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">
+                                        (1 = Sangat Kurang, 2 = Kurang, 3 = Cukup, 4 = Baik, 5 = Sangat Baik)
+                                        @if($cat->deskripsi)
+                                            &bull; <span class="fst-italic">{{ $cat->deskripsi }}</span>
+                                        @endif
+                                    </div>
                                 </div>
-                            @endif
-                            @error('scores.' . $cat->id)
-                                <small class="text-danger mt-1 d-block">{{ $message }}</small>
-                            @enderror
+                                <span class="badge bg-white text-secondary border font-monospace" style="font-size: 0.72rem;">
+                                    {{ count($subs) > 0 ? count($subs) . ' Aspek' : 'Skor Tunggal' }}
+                                </span>
+                            </div>
+
+                            <div class="card-body p-0">
+                                @if(count($subs) > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover align-middle mb-0">
+                                            <thead style="background-color: #e2e8f0; font-size: 0.8rem; color: #334155;">
+                                                <tr>
+                                                    <th class="text-center py-2" style="width: 50px;">No</th>
+                                                    <th class="py-2">Aspek {{ $cat->nama }}</th>
+                                                    <th class="text-center py-2" style="width: 170px;">Skor (1–5) <span class="text-danger">*</span></th>
+                                                    <th class="py-2">Catatan / Observasi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($subs as $sIdx => $subPoint)
+                                                    @php
+                                                        $prevScore = 3;
+                                                        $prevNote = '';
+                                                        if (!empty($prevSubs)) {
+                                                            foreach ($prevSubs as $ps) {
+                                                                if (($ps['aspek'] ?? '') === $subPoint || (!isset($ps['aspek']) && isset($prevSubs[$sIdx]))) {
+                                                                    $prevScore = $ps['skor'] ?? 3;
+                                                                    $prevNote = $ps['catatan'] ?? '';
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                        $oldScore = old("sub_scores.{$cat->id}.{$sIdx}.skor", $prevScore);
+                                                        $oldNote = old("sub_scores.{$cat->id}.{$sIdx}.catatan", $prevNote);
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="text-center fw-bold text-secondary">{{ $sIdx + 1 }}</td>
+                                                        <td>
+                                                            <span class="fw-semibold text-dark">{{ $subPoint }}</span>
+                                                            <input type="hidden" name="sub_scores[{{ $cat->id }}][{{ $sIdx }}][aspek]" value="{{ $subPoint }}">
+                                                        </td>
+                                                        <td>
+                                                            <select name="sub_scores[{{ $cat->id }}][{{ $sIdx }}][skor]" class="form-select form-select-sm fw-bold text-center border-primary-subtle" required>
+                                                                <option value="5" {{ (string)$oldScore === '5' ? 'selected' : '' }}>5 = Sangat Baik</option>
+                                                                <option value="4" {{ (string)$oldScore === '4' ? 'selected' : '' }}>4 = Baik</option>
+                                                                <option value="3" {{ (string)$oldScore === '3' ? 'selected' : '' }}>3 = Cukup</option>
+                                                                <option value="2" {{ (string)$oldScore === '2' ? 'selected' : '' }}>2 = Kurang</option>
+                                                                <option value="1" {{ (string)$oldScore === '1' ? 'selected' : '' }}>1 = Sangat Kurang</option>
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" name="sub_scores[{{ $cat->id }}][{{ $sIdx }}][catatan]" 
+                                                                   class="form-control form-control-sm" 
+                                                                   placeholder="Tulis catatan / observasi khusus..."
+                                                                   value="{{ $oldNote }}">
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <!-- Fallback single score -->
+                                    <div class="p-3">
+                                        <div class="row align-items-center g-3">
+                                            <div class="col-md-5">
+                                                <label class="form-label fw-bold small text-dark mb-0">Skor {{ $cat->nama }} (1–5) <span class="text-danger">*</span></label>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <select name="scores[{{ $cat->id }}]" class="form-select form-select-sm fw-bold text-center">
+                                                    @php $currentSingle = old('scores.' . $cat->id, $nilaiSebelumnya ? $nilaiSebelumnya->getCategoryScore($cat->id, $cat->nama) : 3); @endphp
+                                                    <option value="5" {{ (string)$currentSingle === '5' ? 'selected' : '' }}>5 = Sangat Baik</option>
+                                                    <option value="4" {{ (string)$currentSingle === '4' ? 'selected' : '' }}>4 = Baik</option>
+                                                    <option value="3" {{ (string)$currentSingle === '3' ? 'selected' : '' }}>3 = Cukup</option>
+                                                    <option value="2" {{ (string)$currentSingle === '2' ? 'selected' : '' }}>2 = Kurang</option>
+                                                    <option value="1" {{ (string)$currentSingle === '1' ? 'selected' : '' }}>1 = Sangat Kurang</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @empty
-                        <div class="col-12">
-                            <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
-                                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                                <div>Belum ada kategori penilaian aktif yang ditentukan oleh Administrator.</div>
-                            </div>
+                        <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>Belum ada kategori penilaian aktif yang ditentukan oleh Administrator.</div>
                         </div>
                     @endforelse
                 </div>
@@ -104,7 +178,7 @@
                 <!-- Catatan Asesor -->
                 <div class="mb-4">
                     <label class="form-label fw-bold text-dark">
-                        Catatan & Evaluasi Perkembangan <span class="text-muted fw-normal small">(Opsional)</span>
+                        Catatan & Evaluasi Perkembangan Keseluruhan <span class="text-muted fw-normal small">(Opsional)</span>
                     </label>
                     <textarea name="catatan_asesor" class="form-control @error('catatan_asesor') is-invalid @enderror" rows="4" 
                               placeholder="Tuliskan catatan khusus atau rekomendasi perkembangan untuk atlet ini...">{{ old('catatan_asesor', $nilaiSebelumnya->catatan_asesor ?? '') }}</textarea>

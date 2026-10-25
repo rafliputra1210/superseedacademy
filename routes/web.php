@@ -76,7 +76,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/finances/print', [FinanceController::class, 'print'])->name('finances.print');
     Route::resource('/finances', FinanceController::class);
     Route::resource('/announcements', AnnouncementController::class);
-    Route::patch('/reports/{report}/toggle-archive', [ReportController::class, 'toggleArchive'])->name('reports.toggle-archive');
+    Route::post('/reports/{raport}/toggle-archive', [ReportController::class, 'toggleArchive'])->name('reports.toggle-archive');
+    Route::post('/reports/periods/set-active', [ReportController::class, 'setActivePeriod'])->name('reports.periods.set-active');
+    Route::post('/reports/periods/store', [ReportController::class, 'storePeriod'])->name('reports.periods.store');
+    Route::delete('/reports/periods/{period}', [ReportController::class, 'destroyPeriod'])->name('reports.periods.destroy');
     Route::resource('/reports', ReportController::class);
     Route::get('/reports/rekap-asesor', [ReportController::class, 'rekapAsesor'])->name('reports.rekap');
     Route::post('/reports/generate-final/{athlete}', [ReportController::class, 'generateFinalRaport'])->name('reports.generate-final');

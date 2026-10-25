@@ -63,16 +63,21 @@ class WaliPortalController extends Controller
         $selectedId = $request->get('child_id', $myAthletes->first()->id ?? null);
         $athlete = $myAthletes->where('id', $selectedId)->first() ?? $myAthletes->first();
 
-        $reports = [];
-        $finalRaports = [];
+        $activeRaports   = collect();
+        $archivedRaports = collect();
 
         if ($athlete) {
-            // Tarik data raport asesmen dan raport akumulasi bulanan
-            $reports = Report::query()->where('athlete_id', $athlete->id)->latest()->get();
-            $finalRaports = Raport::where('athlete_id', $athlete->id)->where('status_publish', 'Published')->latest()->get();
+            // Tarik data raport akumulasi bulanan resmi yang sudah diterbitkan
+            $allRaports = Raport::where('athlete_id', $athlete->id)
+                                ->where('status_publish', 'Published')
+                                ->orderBy('id', 'desc')
+                                ->get();
+
+            $activeRaports   = $allRaports->where('is_archived', false)->values();
+            $archivedRaports = $allRaports->where('is_archived', true)->values();
         }
 
-        return view('wali.raport', compact('myAthletes', 'athlete', 'reports', 'finalRaports'));
+        return view('wali.raport', compact('myAthletes', 'athlete', 'activeRaports', 'archivedRaports'));
     }
 
     // 3. Transparansi Laporan Keuangan (Uang Kas) & Riwayat Pembayaran Anak

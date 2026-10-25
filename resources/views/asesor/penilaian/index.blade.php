@@ -10,10 +10,33 @@
             <h4 class="fw-bold text-brand-navy mb-1">
                 <i class="bi bi-clipboard-check-fill text-brand-blue me-2"></i>Penilaian Atlet
             </h4>
-            <p class="text-secondary small mb-0">
-                Periode Evaluasi: <span class="badge bg-primary px-2 py-1">{{ $periodeSekarang }}</span>
-            </p>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-secondary small">Periode Evaluasi:</span>
+                <span class="badge bg-primary px-2.5 py-1 font-monospace">{{ $periodeSekarang }}</span>
+                @if(isset($activePeriodName) && $periodeSekarang === $activePeriodName)
+                    <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size: 0.72rem;">
+                        <i class="bi bi-check-circle-fill me-1"></i>Periode Aktif Instansi
+                    </span>
+                @endif
+            </div>
         </div>
+        @if(isset($periods) && $periods->count() > 0)
+        <div>
+            <form action="{{ route('asesor.penilaian.index') }}" method="GET" class="d-flex align-items-center gap-2">
+                <span class="small fw-semibold text-secondary">Pilih Periode:</span>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-range text-primary"></i></span>
+                    <select name="periode" class="form-select bg-white border-start-0 fw-bold" onchange="this.form.submit()" style="min-width: 220px;">
+                        @foreach($periods as $p)
+                            <option value="{{ $p->nama }}" {{ $periodeSekarang === $p->nama ? 'selected' : '' }}>
+                                {{ $p->nama }} {{ $p->is_active ? '★ (Aktif)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </form>
+        </div>
+        @endif
     </div>
 
     <!-- Ringkasan Statistik Status Penilaian -->
@@ -124,7 +147,7 @@
                                     </div>
                                     <div>
                                         <div class="fw-bold text-dark athlete-name">{{ $atlet->nama }}</div>
-                                        <div class="text-muted small">ID: #{{ str_pad($atlet->id, 4, '0', STR_PAD_LEFT) }}</div>
+                                        <div class="text-muted small font-monospace athlete-code">{{ $atlet->kode_barcode ?: ('#' . str_pad($atlet->id, 4, '0', STR_PAD_LEFT)) }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -150,7 +173,7 @@
                                 @endif
                             </td>
                             <td class="pe-4 text-end">
-                                <a href="{{ route('asesor.penilaian.create', $atlet->id) }}" 
+                                <a href="{{ route('asesor.penilaian.create', ['athlete' => $atlet->id, 'periode' => $periodeSekarang]) }}" 
                                    class="btn btn-sm {{ $sudah ? 'btn-outline-primary' : 'btn-primary shadow-sm' }} d-inline-flex align-items-center gap-1 px-3">
                                     @if($sudah)
                                         <i class="bi bi-pencil-square"></i> Edit Nilai
@@ -176,16 +199,16 @@
 </div>
 
 <script>
-    // Live Search Filter
+    // Live Search Filter (Nama & No. Induk Atlet)
     document.getElementById('searchTable')?.addEventListener('input', function() {
-        const query = this.value.toLowerCase();
+        const query = this.value.toLowerCase().trim();
         const rows = document.querySelectorAll('#athleteTable tbody tr');
         rows.forEach(row => {
             const nameEl = row.querySelector('.athlete-name');
-            if (nameEl) {
-                const name = nameEl.textContent.toLowerCase();
-                row.style.display = name.includes(query) ? '' : 'none';
-            }
+            const codeEl = row.querySelector('.athlete-code');
+            const name = nameEl ? nameEl.textContent.toLowerCase() : '';
+            const code = codeEl ? codeEl.textContent.toLowerCase() : '';
+            row.style.display = (name.includes(query) || code.includes(query)) ? '' : 'none';
         });
     });
 </script>

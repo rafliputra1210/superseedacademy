@@ -21,10 +21,12 @@ class Raport extends Model
         'nilai_mental_final',
         'catatan_pelatih',
         'status_publish',
+        'is_archived',
     ];
 
     protected $casts = [
         'scores_summary' => 'array',
+        'is_archived'    => 'boolean',
     ];
 
     public function athlete()

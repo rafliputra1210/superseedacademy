@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Athlete;
 use App\Models\AssessorScore;
 use App\Models\AssessmentCategory;
+use App\Models\AssessmentPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -14,13 +15,16 @@ class AsesorController extends Controller
 {
     /**
      * 1. Halaman Daftar Atlet untuk Asesor
-     * Menampilkan daftar atlet dan status apakah asesor ini sudah menilai mereka di bulan ini.
+     * Menampilkan daftar atlet dan status apakah asesor ini sudah menilai mereka di periode yang dipilih.
      */
     public function index(Request $request)
     {
         Carbon::setLocale('id');
-        $periodeSekarang = $request->get('periode', Carbon::now()->translatedFormat('F Y'));
-        
+
+        $activePeriodName = AssessmentPeriod::getActivePeriodName();
+        $periodeSekarang = $request->get('periode', $activePeriodName);
+
+        $periods = AssessmentPeriod::orderBy('id', 'desc')->get();
         $athletes = Athlete::orderBy('kelompok_umur', 'asc')->orderBy('nama', 'asc')->get();
 
         // Cari ID atlet mana saja yang SUDAH dinilai oleh asesor ini pada periode tersebut
@@ -29,17 +33,19 @@ class AsesorController extends Controller
                                          ->pluck('athlete_id')
                                          ->toArray();
 
-        return view('asesor.penilaian.index', compact('athletes', 'periodeSekarang', 'penilaianSelesai'));
+        return view('asesor.penilaian.index', compact('athletes', 'periodeSekarang', 'penilaianSelesai', 'periods', 'activePeriodName'));
     }
 
     /**
      * 2. Halaman Form Penilaian (Create/Edit)
-     * Membuka form input nilai untuk 1 atlet spesifik berdasarkan kategori penilaian aktif.
+     * Membuka form input nilai untuk 1 atlet spesifik berdasarkan kategori penilaian aktif dan periode yang dipilih.
      */
-    public function create(Athlete $athlete)
+    public function create(Request $request, Athlete $athlete)
     {
         Carbon::setLocale('id');
-        $periodeSekarang = Carbon::now()->translatedFormat('F Y');
+        
+        $activePeriodName = AssessmentPeriod::getActivePeriodName();
+        $periodeSekarang = $request->get('periode', $activePeriodName);
 
         // Ambil semua kategori penilaian yang sedang aktif
         $categories = AssessmentCategory::where('is_active', true)
@@ -47,7 +53,7 @@ class AsesorController extends Controller
                                         ->orderBy('id', 'asc')
                                         ->get();
 
-        // Cek jika asesor sudah pernah menilai atlet ini di bulan yang sama
+        // Cek jika asesor sudah pernah menilai atlet ini di periode yang sama
         $nilaiSebelumnya = AssessorScore::where('athlete_id', $athlete->id)
                                         ->where('assessor_id', auth()->id())
                                         ->where('periode_bulan', $periodeSekarang)
@@ -63,20 +69,20 @@ class AsesorController extends Controller
     {
         // Validasi input
         $request->validate([
-            'periode_bulan'  => 'required|string',
-            'scores'         => 'required|array',
-            'scores.*'       => 'required|numeric|min:0|max:100',
-            'catatan_asesor' => 'nullable|string|max:1000',
+            'periode_bulan'       => 'required|string',
+            'sub_scores'          => 'nullable|array',
+            'sub_scores.*.*.skor' => 'required|numeric|min:1|max:5',
+            'scores'              => 'nullable|array',
+            'catatan_asesor'      => 'nullable|string|max:1000',
         ], [
-            'scores.*.required' => 'Setiap aspek nilai wajib diisi.',
-            'scores.*.min'      => 'Nilai minimal adalah 0.',
-            'scores.*.max'      => 'Nilai maksimal adalah 100.',
+            'sub_scores.*.*.skor.required' => 'Setiap aspek nilai wajib dipilih (skala 1 - 5).',
+            'sub_scores.*.*.skor.min'      => 'Skor minimal adalah 1.',
+            'sub_scores.*.*.skor.max'      => 'Skor maksimal adalah 5.',
         ]);
 
-        $scoresData = $request->scores;
+        $activeCategories = AssessmentCategory::where('is_active', true)->get();
+        $scoresData = [];
 
-        // Ambil kategori untuk sinkronisasi kolom legacy (teknik, taktik, fisik, mental)
-        $categories = AssessmentCategory::whereIn('id', array_keys($scoresData))->get();
         $legacy = [
             'nilai_teknik' => 0,
             'nilai_taktik' => 0,
@@ -84,13 +90,54 @@ class AsesorController extends Controller
             'nilai_mental' => 0,
         ];
 
-        foreach ($categories as $cat) {
+        foreach ($activeCategories as $cat) {
+            $catId = $cat->id;
+
+            // Jika ada input sub_scores untuk kategori ini
+            if ($request->has("sub_scores.{$catId}") && is_array($request->input("sub_scores.{$catId}"))) {
+                $subInputs = $request->input("sub_scores.{$catId}");
+                $subScoresArr = [];
+                $totalScore = 0;
+                $count = 0;
+
+                foreach ($subInputs as $item) {
+                    $skor = isset($item['skor']) ? (float)$item['skor'] : 3;
+                    $aspek = $item['aspek'] ?? '';
+                    $catatan = !empty($item['catatan']) ? trim($item['catatan']) : null;
+
+                    $subScoresArr[] = [
+                        'aspek'   => $aspek,
+                        'skor'    => $skor,
+                        'catatan' => $catatan,
+                    ];
+                    $totalScore += $skor;
+                    $count++;
+                }
+
+                $categoryScore = $count > 0 ? round($totalScore / $count, 2) : 0;
+
+                $scoresData[$catId] = [
+                    'score'      => $categoryScore,
+                    'sub_points' => $subScoresArr,
+                ];
+            } elseif ($request->has("scores.{$catId}")) {
+                // Fallback direct score
+                $directVal = (float)$request->input("scores.{$catId}", 0);
+                $scoresData[$catId] = [
+                    'score'      => $directVal,
+                    'sub_points' => [],
+                ];
+                $categoryScore = $directVal;
+            } else {
+                $categoryScore = 0;
+            }
+
+            // Sync legacy columns
             $slug = Str::slug($cat->nama);
-            $val = $scoresData[$cat->id] ?? 0;
-            if ($slug === 'teknik') $legacy['nilai_teknik'] = $val;
-            if ($slug === 'taktik') $legacy['nilai_taktik'] = $val;
-            if ($slug === 'fisik')  $legacy['nilai_fisik']  = $val;
-            if ($slug === 'mental') $legacy['nilai_mental'] = $val;
+            if ($slug === 'teknik') $legacy['nilai_teknik'] = $categoryScore;
+            if ($slug === 'taktik') $legacy['nilai_taktik'] = $categoryScore;
+            if ($slug === 'fisik')  $legacy['nilai_fisik']  = $categoryScore;
+            if ($slug === 'mental') $legacy['nilai_mental'] = $categoryScore;
         }
 
         AssessorScore::updateOrCreate(
@@ -105,7 +152,7 @@ class AsesorController extends Controller
             ])
         );
 
-        return redirect()->route('asesor.penilaian.index')
-                         ->with('success', "Penilaian untuk {$athlete->nama} berhasil disimpan!");
+        return redirect()->route('asesor.penilaian.index', ['periode' => $request->periode_bulan])
+                         ->with('success', "Penilaian untuk {$athlete->nama} ({$request->periode_bulan}) berhasil disimpan!");
     }
 }

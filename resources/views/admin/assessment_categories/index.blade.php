@@ -37,22 +37,53 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold text-dark small">Nama Kategori <span class="text-danger">*</span></label>
                             <input type="text" name="nama" class="form-control form-control-sm @error('nama') is-invalid @enderror" 
-                                   placeholder="Contoh: Disiplin & Sikap" value="{{ old('nama') }}" required>
+                                   placeholder="Contoh: Penilaian Skill Teknis" value="{{ old('nama') }}" required>
                             @error('nama')
                                 <small class="text-danger d-block mt-1">{{ $message }}</small>
                             @enderror
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold text-dark small">Deskripsi / Indikator Penilaian</label>
+                            <label class="form-label fw-bold text-dark small">Deskripsi Singkat</label>
                             <textarea name="deskripsi" class="form-control form-control-sm @error('deskripsi') is-invalid @enderror" 
-                                      rows="3" placeholder="Contoh: Kehadiran tepat waktu, kepatuhan instruksi, sportivitas...">{{ old('deskripsi') }}</textarea>
+                                      rows="2" placeholder="Contoh: Penguasaan bola, dribble, passing, ball control, dan shooting...">{{ old('deskripsi') }}</textarea>
                             @error('deskripsi')
                                 <small class="text-danger d-block mt-1">{{ $message }}</small>
                             @enderror
-                            <div class="form-text text-muted" style="font-size: 0.75rem;">
-                                Menjadi panduan asesor saat memberikan nilai skala 0 - 100.
+                        </div>
+
+                        <!-- Sub Poin / Indikator Penilaian (Skor 1-5) -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-bold text-dark small mb-0">
+                                    <i class="bi bi-list-check text-primary me-1"></i>Sub Poin / Aspek (Skor 1–5)
+                                </label>
+                                <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.7rem;">Dinamis</span>
                             </div>
+                            <div class="form-text text-muted small mb-2" style="font-size: 0.73rem;">
+                                Aspek indikator yang akan dinilai oleh asesor pada form penilaian skala 1 (Sangat Kurang) s/d 5 (Sangat Baik).
+                            </div>
+
+                            <div id="newSubPointsList" class="d-flex flex-column gap-2 mb-2">
+                                <div class="input-group input-group-sm sub-point-row">
+                                    <span class="input-group-text bg-light text-secondary fw-bold sub-idx">1</span>
+                                    <input type="text" name="sub_points[]" class="form-control" placeholder="Contoh: Kontrol bola (Ball Control)">
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeSubPointRow(this)" title="Hapus">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group input-group-sm sub-point-row">
+                                    <span class="input-group-text bg-light text-secondary fw-bold sub-idx">2</span>
+                                    <input type="text" name="sub_points[]" class="form-control" placeholder="Contoh: Akurasi passing dan first touch">
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeSubPointRow(this)" title="Hapus">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-xs btn-outline-primary w-100 py-1.5 rounded-2 d-flex align-items-center justify-content-center gap-1" onclick="addSubPointRow('newSubPointsList')">
+                                <i class="bi bi-plus-circle"></i>
+                                <span>Tambah Sub Poin</span>
+                            </button>
                         </div>
 
                         <div class="mb-3">
@@ -92,7 +123,7 @@
                             <thead style="background-color: #f8fafc; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">
                                 <tr>
                                     <th class="ps-4 py-3" style="width: 70px;">Urutan</th>
-                                    <th class="py-3">Kategori & Aspek</th>
+                                    <th class="py-3">Kategori & Sub Poin</th>
                                     <th class="py-3 text-center" style="width: 120px;">Status</th>
                                     <th class="pe-4 py-3 text-end" style="width: 150px;">Aksi</th>
                                 </tr>
@@ -106,10 +137,35 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="fw-bold text-dark fs-6">{{ $category->nama }}</div>
-                                        <div class="text-muted small mt-0.5">
-                                            {{ $category->deskripsi ?: 'Tidak ada keterangan indikator.' }}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-dark fs-6">{{ $category->nama }}</span>
+                                            @php $subs = $category->sub_points_list; @endphp
+                                            <span class="badge rounded-pill {{ count($subs) > 0 ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-light text-muted border' }}" style="font-size: 0.72rem;">
+                                                <i class="bi bi-list-check me-1"></i>{{ count($subs) }} Sub Poin
+                                            </span>
                                         </div>
+                                        @if($category->deskripsi)
+                                            <div class="text-muted small mt-0.5">
+                                                {{ $category->deskripsi }}
+                                            </div>
+                                        @endif
+
+                                        @if(count($subs) > 0)
+                                            <div class="mt-2 p-2 rounded-2 bg-light border small">
+                                                <div class="text-secondary fw-semibold mb-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em;">
+                                                    Daftar Aspek Penilaian (Skor 1–5):
+                                                </div>
+                                                <ol class="mb-0 ps-3 text-dark" style="font-size: 0.8rem;">
+                                                    @foreach($subs as $sub)
+                                                        <li>{{ $sub }}</li>
+                                                    @endforeach
+                                                </ol>
+                                            </div>
+                                        @else
+                                            <div class="text-secondary small fst-italic mt-1" style="font-size: 0.75rem;">
+                                                (Belum ada sub poin spesifik, penilaian menggunakan skor tunggal)
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         <form action="{{ route('admin.assessment_categories.toggle', $category->id) }}" method="POST" class="d-inline">
@@ -133,7 +189,7 @@
                                             <button type="button" class="btn btn-sm btn-outline-primary" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editModal{{ $category->id }}"
-                                                    title="Edit Kategori">
+                                                    title="Edit Kategori & Sub Poin">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
 
@@ -150,11 +206,11 @@
 
                                         <!-- Modal Edit -->
                                         <div class="modal fade" id="editModal{{ $category->id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
-                                            <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-dialog modal-dialog-centered modal-lg">
                                                 <div class="modal-content border-0 shadow">
                                                     <div class="modal-header border-bottom">
                                                         <h6 class="modal-title fw-bold text-brand-navy">
-                                                            <i class="bi bi-pencil-square text-primary me-2"></i>Edit Kategori Penilaian
+                                                            <i class="bi bi-pencil-square text-primary me-2"></i>Edit Kategori & Sub Poin: {{ $category->nama }}
                                                         </h6>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
@@ -162,26 +218,67 @@
                                                         @csrf
                                                         @method('PUT')
                                                         <div class="modal-body p-4">
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-bold text-dark small">Nama Kategori <span class="text-danger">*</span></label>
-                                                                <input type="text" name="nama" class="form-control" value="{{ $category->nama }}" required>
-                                                            </div>
+                                                            <div class="row g-3">
+                                                                <div class="col-md-8">
+                                                                    <label class="form-label fw-bold text-dark small">Nama Kategori <span class="text-danger">*</span></label>
+                                                                    <input type="text" name="nama" class="form-control" value="{{ $category->nama }}" required>
+                                                                </div>
 
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-bold text-dark small">Deskripsi / Indikator</label>
-                                                                <textarea name="deskripsi" class="form-control" rows="3">{{ $category->deskripsi }}</textarea>
-                                                            </div>
+                                                                <div class="col-md-4">
+                                                                    <label class="form-label fw-bold text-dark small">Urutan Tampil</label>
+                                                                    <input type="number" name="urutan" class="form-control" value="{{ $category->urutan }}" min="1">
+                                                                </div>
 
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-bold text-dark small">Urutan Tampil</label>
-                                                                <input type="number" name="urutan" class="form-control" value="{{ $category->urutan }}" min="1">
-                                                            </div>
+                                                                <div class="col-12">
+                                                                    <label class="form-label fw-bold text-dark small">Deskripsi / Petunjuk</label>
+                                                                    <textarea name="deskripsi" class="form-control" rows="2">{{ $category->deskripsi }}</textarea>
+                                                                </div>
 
-                                                            <div class="form-check form-switch">
-                                                                <input class="form-check-input" type="checkbox" name="is_active" id="editActive{{ $category->id }}" value="1" {{ $category->is_active ? 'checked' : '' }}>
-                                                                <label class="form-check-label small fw-semibold" for="editActive{{ $category->id }}">
-                                                                    Status Kategori Aktif
-                                                                </label>
+                                                                <!-- Sub Poin List -->
+                                                                <div class="col-12">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <label class="form-label fw-bold text-dark small mb-0">
+                                                                            <i class="bi bi-list-check text-primary me-1"></i>Sub Poin / Aspek Penilaian (Skala 1–5)
+                                                                        </label>
+                                                                        <span class="badge bg-light text-secondary border font-monospace">Skala 1 - 5</span>
+                                                                    </div>
+                                                                    <div class="form-text text-muted small mb-2">
+                                                                        Setiap sub poin akan menjadi baris penilaian bagi asesor (1 = Sangat Kurang s/d 5 = Sangat Baik).
+                                                                    </div>
+
+                                                                    <div id="subPointsEditList{{ $category->id }}" class="d-flex flex-column gap-2 mb-2">
+                                                                        @forelse($category->sub_points_list as $eIdx => $eSub)
+                                                                            <div class="input-group input-group-sm sub-point-row">
+                                                                                <span class="input-group-text bg-light text-secondary fw-bold sub-idx">{{ $eIdx + 1 }}</span>
+                                                                                <input type="text" name="sub_points[]" class="form-control" value="{{ $eSub }}" placeholder="Nama Aspek Penilaian">
+                                                                                <button type="button" class="btn btn-outline-danger" onclick="removeSubPointRow(this)" title="Hapus">
+                                                                                    <i class="bi bi-x"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        @empty
+                                                                            <div class="input-group input-group-sm sub-point-row">
+                                                                                <span class="input-group-text bg-light text-secondary fw-bold sub-idx">1</span>
+                                                                                <input type="text" name="sub_points[]" class="form-control" placeholder="Nama Aspek Penilaian">
+                                                                                <button type="button" class="btn btn-outline-danger" onclick="removeSubPointRow(this)" title="Hapus">
+                                                                                    <i class="bi bi-x"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        @endforelse
+                                                                    </div>
+                                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-2 d-inline-flex align-items-center gap-1" onclick="addSubPointRow('subPointsEditList{{ $category->id }}')">
+                                                                        <i class="bi bi-plus-circle"></i>
+                                                                        <span>Tambah Sub Poin</span>
+                                                                    </button>
+                                                                </div>
+
+                                                                <div class="col-12 mt-3">
+                                                                    <div class="form-check form-switch">
+                                                                        <input class="form-check-input" type="checkbox" name="is_active" id="editActive{{ $category->id }}" value="1" {{ $category->is_active ? 'checked' : '' }}>
+                                                                        <label class="form-check-label small fw-semibold" for="editActive{{ $category->id }}">
+                                                                            Status Kategori Aktif
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div class="modal-footer border-top bg-light py-2">
@@ -210,4 +307,39 @@
         </div>
     </div>
 </div>
+
+<script>
+function addSubPointRow(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const rowCount = container.querySelectorAll('.sub-point-row').length + 1;
+    const row = document.createElement('div');
+    row.className = 'input-group input-group-sm sub-point-row';
+    row.innerHTML = `
+        <span class="input-group-text bg-light text-secondary fw-bold sub-idx">${rowCount}</span>
+        <input type="text" name="sub_points[]" class="form-control" placeholder="Nama Aspek Penilaian">
+        <button type="button" class="btn btn-outline-danger" onclick="removeSubPointRow(this)" title="Hapus">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
+    container.appendChild(row);
+    row.querySelector('input').focus();
+}
+
+function removeSubPointRow(btn) {
+    const row = btn.closest('.sub-point-row');
+    const container = row.parentElement;
+    row.remove();
+
+    // Re-index numbering
+    if (container) {
+        const rows = container.querySelectorAll('.sub-point-row');
+        rows.forEach((r, idx) => {
+            const numSpan = r.querySelector('.sub-idx');
+            if (numSpan) numSpan.textContent = idx + 1;
+        });
+    }
+}
+</script>
 @endsection

@@ -23,10 +23,12 @@ class AssessmentCategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama'      => 'required|string|max:100|unique:assessment_categories,nama',
-            'deskripsi' => 'nullable|string|max:500',
-            'urutan'    => 'nullable|integer|min:0',
-            'is_active' => 'nullable|boolean',
+            'nama'         => 'required|string|max:100|unique:assessment_categories,nama',
+            'deskripsi'    => 'nullable|string|max:500',
+            'urutan'       => 'nullable|integer|min:0',
+            'is_active'    => 'nullable|boolean',
+            'sub_points'   => 'nullable|array',
+            'sub_points.*' => 'nullable|string|max:255',
         ], [
             'nama.required' => 'Nama kategori wajib diisi.',
             'nama.unique'   => 'Kategori dengan nama ini sudah ada.',
@@ -34,6 +36,13 @@ class AssessmentCategoryController extends Controller
 
         $validated['urutan'] = $validated['urutan'] ?? (AssessmentCategory::max('urutan') + 1);
         $validated['is_active'] = $request->has('is_active') ? true : false;
+
+        // Bersihkan sub points yang kosong
+        if ($request->has('sub_points') && is_array($request->sub_points)) {
+            $validated['sub_points'] = array_values(array_filter(array_map('trim', $request->sub_points), fn($val) => $val !== ''));
+        } else {
+            $validated['sub_points'] = [];
+        }
 
         AssessmentCategory::create($validated);
 
@@ -47,9 +56,11 @@ class AssessmentCategoryController extends Controller
     public function update(Request $request, AssessmentCategory $category)
     {
         $validated = $request->validate([
-            'nama'      => 'required|string|max:100|unique:assessment_categories,nama,' . $category->id,
-            'deskripsi' => 'nullable|string|max:500',
-            'urutan'    => 'nullable|integer|min:0',
+            'nama'         => 'required|string|max:100|unique:assessment_categories,nama,' . $category->id,
+            'deskripsi'    => 'nullable|string|max:500',
+            'urutan'       => 'nullable|integer|min:0',
+            'sub_points'   => 'nullable|array',
+            'sub_points.*' => 'nullable|string|max:255',
         ], [
             'nama.required' => 'Nama kategori wajib diisi.',
             'nama.unique'   => 'Kategori dengan nama ini sudah digunakan.',
@@ -57,6 +68,13 @@ class AssessmentCategoryController extends Controller
 
         $validated['urutan'] = $validated['urutan'] ?? $category->urutan;
         $validated['is_active'] = $request->has('is_active') ? true : false;
+
+        // Bersihkan sub points yang kosong
+        if ($request->has('sub_points') && is_array($request->sub_points)) {
+            $validated['sub_points'] = array_values(array_filter(array_map('trim', $request->sub_points), fn($val) => $val !== ''));
+        } else {
+            $validated['sub_points'] = [];
+        }
 
         $category->update($validated);
 
