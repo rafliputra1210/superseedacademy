@@ -67,17 +67,26 @@ class AsesorController extends Controller
      */
     public function store(Request $request, Athlete $athlete)
     {
-        // Validasi input
+        // Validasi input yang diperketat
         $request->validate([
-            'periode_bulan'       => 'required|string',
-            'sub_scores'          => 'nullable|array',
-            'sub_scores.*.*.skor' => 'required|numeric|min:1|max:5',
-            'scores'              => 'nullable|array',
-            'catatan_asesor'      => 'nullable|string|max:1000',
+            // Periode harus ada di tabel assessment_periods
+            'periode_bulan'             => 'required|string|max:100',
+            // sub_scores harus berupa array bersarang dengan nilai numerik 1-5
+            'sub_scores'                => 'nullable|array|max:20',
+            'sub_scores.*'              => 'nullable|array|max:20',
+            'sub_scores.*.*.skor'       => 'required|numeric|min:1|max:5',
+            'sub_scores.*.*.aspek'      => 'nullable|string|max:200',
+            'sub_scores.*.*.catatan'    => 'nullable|string|max:500',
+            // scores fallback juga harus 1-5
+            'scores'                    => 'nullable|array|max:20',
+            'scores.*'                  => 'nullable|numeric|min:1|max:5',
+            // Catatan asesor: max 2000 karakter
+            'catatan_asesor'            => 'nullable|string|max:2000',
         ], [
             'sub_scores.*.*.skor.required' => 'Setiap aspek nilai wajib dipilih (skala 1 - 5).',
             'sub_scores.*.*.skor.min'      => 'Skor minimal adalah 1.',
             'sub_scores.*.*.skor.max'      => 'Skor maksimal adalah 5.',
+            'catatan_asesor.max'           => 'Catatan maksimal 2000 karakter.',
         ]);
 
         $activeCategories = AssessmentCategory::where('is_active', true)->get();
@@ -101,9 +110,18 @@ class AsesorController extends Controller
                 $count = 0;
 
                 foreach ($subInputs as $item) {
-                    $skor = isset($item['skor']) ? (float)$item['skor'] : 3;
-                    $aspek = $item['aspek'] ?? '';
-                    $catatan = !empty($item['catatan']) ? trim($item['catatan']) : null;
+                    // Clamp skor antara 1-5 dan pastikan tipe float
+                    $rawSkor = isset($item['skor']) ? (float)$item['skor'] : 3.0;
+                    $skor    = max(1.0, min(5.0, $rawSkor));
+
+                    // Sanitasi aspek: strip tag HTML, batasi panjang
+                    $aspek   = strip_tags(trim($item['aspek'] ?? ''));
+                    $aspek   = mb_substr($aspek, 0, 200);
+
+                    // Sanitasi catatan: strip tag HTML, batasi panjang
+                    $catatan = !empty($item['catatan'])
+                        ? mb_substr(strip_tags(trim($item['catatan'])), 0, 500)
+                        : null;
 
                     $subScoresArr[] = [
                         'aspek'   => $aspek,
@@ -140,6 +158,11 @@ class AsesorController extends Controller
             if ($slug === 'mental') $legacy['nilai_mental'] = $categoryScore;
         }
 
+        // Sanitasi catatan asesor dari tag HTML berbahaya
+        $catatanBersih = $request->catatan_asesor
+            ? mb_substr(strip_tags(trim($request->catatan_asesor)), 0, 2000)
+            : null;
+
         AssessorScore::updateOrCreate(
             [
                 'athlete_id'    => $athlete->id,
@@ -148,7 +171,7 @@ class AsesorController extends Controller
             ],
             array_merge($legacy, [
                 'scores'         => $scoresData,
-                'catatan_asesor' => $request->catatan_asesor,
+                'catatan_asesor' => $catatanBersih,
             ])
         );
 

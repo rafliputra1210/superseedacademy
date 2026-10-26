@@ -125,7 +125,10 @@
         /* Utility classes */
         .text-brand-blue { color: var(--brand-blue) !important; }
         .text-brand-navy { color: var(--brand-navy) !important; }
+        .text-brand-gray { color: var(--brand-gray) !important; }
         .bg-brand-light { background-color: var(--brand-light) !important; }
+        .bg-brand-navy { background-color: var(--brand-navy) !important; color: #ffffff !important; }
+        .bg-brand-blue { background-color: var(--brand-blue) !important; color: #ffffff !important; }
 
         /* Responsive Sidebar */
         @media (max-width: 991.98px) {

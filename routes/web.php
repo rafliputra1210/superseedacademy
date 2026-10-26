@@ -21,8 +21,9 @@ use App\Http\Controllers\Admin\AsesorManagerController;
 use App\Http\Controllers\Admin\AssessmentCategoryController;
 
 
-
-// Rute Modul Landing Page (Publik)
+// =============================================================================
+// RUTE MODUL LANDING PAGE (Publik)
+// =============================================================================
 Route::controller(LandingPageController::class)->group(function () {
     Route::get('/', 'index')->name('landing.home');
     Route::get('/profil-coach', 'coaches')->name('landing.coaches');
@@ -30,92 +31,158 @@ Route::controller(LandingPageController::class)->group(function () {
     Route::get('/prestasi', 'achievements')->name('landing.achievements');
     Route::get('/galeri', 'gallery')->name('landing.gallery');
     Route::get('/pendaftaran', 'registration')->name('landing.registration');
+    Route::get('/berita', 'news')->name('landing.news');
+    Route::get('/berita/{slug}', 'newsDetail')->name('landing.news.detail');
+    // Rate limit komentar publik: 3x per menit per IP
+    Route::post('/berita/{slug}/comment', 'storeComment')
+        ->middleware('throttle:3,1')
+        ->name('landing.news.comment');
 });
-// --- RUTE AUTENTIKASI ---
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-// Rute autentikasi lainnya...
-Route::post('/login', [AuthController::class, 'login'])->name('login.process');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// --- RUTE MODUL 3: PANEL ADMIN (Backend) ---
+// =============================================================================
+// RUTE AUTENTIKASI
+// =============================================================================
+// Rate limit login: max 5 percobaan per menit per IP (+ manual RateLimiter di AuthController)
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1')
+    ->name('login.process');
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
+// =============================================================================
+// RUTE PANEL ADMIN (Backend) — dilindungi auth + role + throttle
+// =============================================================================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('dashboard');
 
-    // --- RUTE EKSPOR EXCEL (Wajib ditaruh di atas resource) ---
-    Route::get('/athletes/export/excel', [AthleteController::class, 'exportExcel'])->name('athletes.export');
-    Route::get('/coaches/export/excel', [CoachController::class, 'exportExcel'])->name('coaches.export');
-    Route::post('/coaches/import/excel', [CoachController::class, 'importExcel'])->name('coaches.import');
+    // --- EKSPOR EXCEL (read-only, throttle sedang) ---
+    Route::get('/athletes/export/excel', [AthleteController::class, 'exportExcel'])
+        ->middleware('throttle:10,1')
+        ->name('athletes.export');
+    Route::get('/coaches/export/excel', [CoachController::class, 'exportExcel'])
+        ->middleware('throttle:10,1')
+        ->name('coaches.export');
 
-    // Route CRUD Data Atlet (Murid)
-    // --- RUTE EKSPOR, IMPOR & CETAK KARTU ---
-    Route::post('/athletes/import/excel', [AthleteController::class, 'importExcel'])->name('athletes.import');
-    
-    // Rute Baru Cetak ID Card Barcode & QR Code:
-    Route::get('/athletes/export/qr', [AthleteController::class, 'exportQr'])->name('athletes.export-qr');
-    Route::get('/athletes/{athlete}/print-qr', [AthleteController::class, 'printQrCard'])->name('athletes.print-qr-card');
-    Route::get('/athletes/print-all-cards', [AthleteController::class, 'printAllCards'])->name('athletes.print-all');
-    Route::get('/athletes/{athlete}/print-card', [AthleteController::class, 'printCard'])->name('athletes.print-card');
+    // --- IMPORT (write, throttle ketat) ---
+    Route::post('/coaches/import/excel', [CoachController::class, 'importExcel'])
+        ->middleware('throttle:5,1')
+        ->name('coaches.import');
+    Route::post('/athletes/import/excel', [AthleteController::class, 'importExcel'])
+        ->middleware('throttle:5,1')
+        ->name('athletes.import');
 
-    // --- RUTE RESOURCE CRUD ---
+    // --- CETAK KARTU / QR ---
+    Route::get('/athletes/export/qr', [AthleteController::class, 'exportQr'])
+        ->middleware('throttle:20,1')
+        ->name('athletes.export-qr');
+    Route::get('/athletes/{athlete}/print-qr', [AthleteController::class, 'printQrCard'])
+        ->middleware('throttle:30,1')
+        ->name('athletes.print-qr-card');
+    Route::get('/athletes/print-all-cards', [AthleteController::class, 'printAllCards'])
+        ->middleware('throttle:10,1')
+        ->name('athletes.print-all');
+    Route::get('/athletes/{athlete}/print-card', [AthleteController::class, 'printCard'])
+        ->middleware('throttle:30,1')
+        ->name('athletes.print-card');
+
+    // --- RESOURCE CRUD ---
     Route::resource('/athletes', AthleteController::class);
-    
-    // Route CRUD Coach & Absensi
     Route::resource('/coaches', CoachController::class);
-    
-    // --- RUTE KAMERA SCAN ABSENSI ---
-    Route::get('/attendances/scan', [AttendanceController::class, 'scan'])->name('attendances.scan');
-    Route::post('/attendances/scan-store', [AttendanceController::class, 'storeScan'])->middleware('throttle:60,1')->name('attendances.scan-store');
 
+    // --- SCAN ABSENSI (rate limit ketat: anti-abuse scanner) ---
+    Route::get('/attendances/scan', [AttendanceController::class, 'scan'])->name('attendances.scan');
+    Route::post('/attendances/scan-store', [AttendanceController::class, 'storeScan'])
+        ->middleware('throttle:60,1')
+        ->name('attendances.scan-store');
     Route::resource('/attendances', AttendanceController::class);
-    // Rute Keuangan, Pengumuman, dan Raport
-    Route::post('/finances/generate-bulk', [FinanceController::class, 'generateBulkTagihan'])->name('finances.generate-bulk');
-    Route::delete('/finances/bulk-delete', [FinanceController::class, 'bulkDelete'])->name('finances.bulkDelete');
-    Route::get('/finances/export/excel', [FinanceController::class, 'exportExcel'])->name('finances.export');
-    Route::get('/finances/print', [FinanceController::class, 'print'])->name('finances.print');
+
+    // --- KEUANGAN ---
+    Route::post('/finances/generate-bulk', [FinanceController::class, 'generateBulkTagihan'])
+        ->middleware('throttle:10,1')
+        ->name('finances.generate-bulk');
+    Route::delete('/finances/bulk-delete', [FinanceController::class, 'bulkDelete'])
+        ->middleware('throttle:10,1')
+        ->name('finances.bulkDelete');
+    Route::get('/finances/export/excel', [FinanceController::class, 'exportExcel'])
+        ->middleware('throttle:10,1')
+        ->name('finances.export');
+    Route::get('/finances/print', [FinanceController::class, 'print'])
+        ->middleware('throttle:10,1')
+        ->name('finances.print');
     Route::resource('/finances', FinanceController::class);
+
+    // --- PENGUMUMAN ---
     Route::resource('/announcements', AnnouncementController::class);
-    Route::post('/reports/{raport}/toggle-archive', [ReportController::class, 'toggleArchive'])->name('reports.toggle-archive');
-    Route::post('/reports/periods/set-active', [ReportController::class, 'setActivePeriod'])->name('reports.periods.set-active');
-    Route::post('/reports/periods/store', [ReportController::class, 'storePeriod'])->name('reports.periods.store');
-    Route::delete('/reports/periods/{period}', [ReportController::class, 'destroyPeriod'])->name('reports.periods.destroy');
+
+    // --- RAPORT & PERIODE ---
+    Route::post('/reports/{raport}/toggle-archive', [ReportController::class, 'toggleArchive'])
+        ->middleware('throttle:30,1')
+        ->name('reports.toggle-archive');
+    Route::post('/reports/periods/set-active', [ReportController::class, 'setActivePeriod'])
+        ->middleware('throttle:10,1')
+        ->name('reports.periods.set-active');
+    Route::post('/reports/periods/store', [ReportController::class, 'storePeriod'])
+        ->middleware('throttle:10,1')
+        ->name('reports.periods.store');
+    Route::delete('/reports/periods/{period}', [ReportController::class, 'destroyPeriod'])
+        ->middleware('throttle:10,1')
+        ->name('reports.periods.destroy');
     Route::resource('/reports', ReportController::class);
     Route::get('/reports/rekap-asesor', [ReportController::class, 'rekapAsesor'])->name('reports.rekap');
-    Route::post('/reports/generate-final/{athlete}', [ReportController::class, 'generateFinalRaport'])->name('reports.generate-final');
+    Route::post('/reports/generate-final/{athlete}', [ReportController::class, 'generateFinalRaport'])
+        ->middleware('throttle:20,1')
+        ->name('reports.generate-final');
 
-    // Rute CRUD Jadwal Latihan
+    // --- JADWAL ---
     Route::resource('/schedules', ScheduleController::class);
 
-    // Rute Manajemen Cepat Akun Wali Murid
+    // --- MANAJEMEN AKUN WALI (write ops throttled) ---
     Route::get('/manajemen-akun-wali', [WaliManagerController::class, 'index'])->name('wali.index');
-    Route::post('/manajemen-akun-wali/generate/{athlete}', [WaliManagerController::class, 'generate'])->name('wali.generate');
-    Route::post('/manajemen-akun-wali/reset/{user}', [WaliManagerController::class, 'resetPassword'])->name('wali.reset');
+    Route::post('/manajemen-akun-wali/generate/{athlete}', [WaliManagerController::class, 'generate'])
+        ->middleware('throttle:20,1')
+        ->name('wali.generate');
+    Route::post('/manajemen-akun-wali/reset/{user}', [WaliManagerController::class, 'resetPassword'])
+        ->middleware('throttle:10,1')
+        ->name('wali.reset');
 
-    // Rute Pengaturan Banner
+    // --- BANNER ---
     Route::resource('/banners', BannerController::class)->except(['create', 'show', 'edit', 'update']);
-    Route::post('/banners/{id}/toggle', [BannerController::class, 'toggleActive'])->name('banners.toggle');
+    Route::post('/banners/{id}/toggle', [BannerController::class, 'toggleActive'])
+        ->middleware('throttle:30,1')
+        ->name('banners.toggle');
 
-    // Rute CRUD Berita, Galeri & Prestasi
+    // --- KONTEN (BERITA, GALERI, PRESTASI) ---
     Route::resource('/news', NewsController::class);
     Route::resource('/galleries', GalleryController::class);
     Route::resource('/achievements', AchievementController::class);
 
-    // Rute Manajemen Akun Asesor
+    // --- MANAJEMEN AKUN ASESOR ---
     Route::get('/manajemen-asesor', [AsesorManagerController::class, 'index'])->name('asesor_manager.index');
-    Route::post('/manajemen-asesor', [AsesorManagerController::class, 'store'])->name('asesor_manager.store');
-    Route::delete('/manajemen-asesor/{user}', [AsesorManagerController::class, 'destroy'])->name('asesor_manager.destroy');
+    Route::post('/manajemen-asesor', [AsesorManagerController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('asesor_manager.store');
+    Route::delete('/manajemen-asesor/{user}', [AsesorManagerController::class, 'destroy'])
+        ->middleware('throttle:10,1')
+        ->name('asesor_manager.destroy');
 
-    // Rute Kategori Penilaian Raport Custom
+    // --- KATEGORI PENILAIAN RAPORT ---
     Route::resource('/assessment-categories', AssessmentCategoryController::class)
         ->names('assessment_categories')
         ->parameters(['assessment-categories' => 'category'])
         ->except(['create', 'show', 'edit']);
-    Route::post('/assessment-categories/{category}/toggle', [AssessmentCategoryController::class, 'toggleActive'])->name('assessment_categories.toggle');
-
+    Route::post('/assessment-categories/{category}/toggle', [AssessmentCategoryController::class, 'toggleActive'])
+        ->middleware('throttle:30,1')
+        ->name('assessment_categories.toggle');
 });
 
-// --- RUTE MODUL 4: PORTAL WALI MURID (Frontend User) ---
+// =============================================================================
+// RUTE PORTAL WALI MURID — dilindungi auth + role
+// =============================================================================
 Route::middleware(['auth', 'role:wali_murid'])->prefix('portal-wali')->name('wali.')->group(function () {
     Route::get('/dashboard', [WaliPortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/absensi', [WaliPortalController::class, 'absensi'])->name('absensi');
@@ -123,17 +190,20 @@ Route::middleware(['auth', 'role:wali_murid'])->prefix('portal-wali')->name('wal
     Route::get('/keuangan', [WaliPortalController::class, 'keuangan'])->name('keuangan');
     Route::get('/pengumuman', [WaliPortalController::class, 'pengumuman'])->name('pengumuman');
     Route::get('/profil', [WaliPortalController::class, 'profile'])->name('profile');
-    Route::post('/profil/ubah-password', [WaliPortalController::class, 'updatePassword'])->middleware('throttle:5,1')->name('profile.update-password');
+    // Rate limit ganti password: 5x per menit (sudah ada) → pertahankan
+    Route::post('/profil/ubah-password', [WaliPortalController::class, 'updatePassword'])
+        ->middleware('throttle:5,1')
+        ->name('profile.update-password');
 });
 
-Route::controller(LandingPageController::class)->group(function () {
-    Route::get('/', 'index')->name('landing.home');
-    Route::get('/berita', 'news')->name('landing.news');
-    Route::get('/berita/{slug}', 'newsDetail')->name('landing.news.detail');
-    Route::post('/berita/{slug}/comment', 'storeComment')->middleware('throttle:5,1')->name('landing.news.comment');
-});
+// =============================================================================
+// RUTE ASESOR — dilindungi auth + role + throttle pada submit penilaian
+// =============================================================================
 Route::middleware(['auth', 'role:asesor'])->prefix('asesor')->name('asesor.')->group(function () {
-    Route::get('/penilaian', [App\Http\Controllers\Asesor\AsesorController::class, 'index'])->name('penilaian.index');
-    Route::get('/penilaian/{athlete}/create', [App\Http\Controllers\Asesor\AsesorController::class, 'create'])->name('penilaian.create');
-    Route::post('/penilaian/{athlete}', [App\Http\Controllers\Asesor\AsesorController::class, 'store'])->name('penilaian.store');
+    Route::get('/penilaian', [AsesorController::class, 'index'])->name('penilaian.index');
+    Route::get('/penilaian/{athlete}/create', [AsesorController::class, 'create'])->name('penilaian.create');
+    // Rate limit submit penilaian: 30x per menit per asesor
+    Route::post('/penilaian/{athlete}', [AsesorController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('penilaian.store');
 });

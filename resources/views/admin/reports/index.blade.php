@@ -320,7 +320,9 @@
                                                                                             <td class="text-center text-muted fw-bold">{{ $spIdx + 1 }}</td>
                                                                                             <td class="fw-medium text-dark">{{ $subItem['aspek'] }}</td>
                                                                                             <td class="text-center">
-                                                                                                <span class="badge bg-brand-navy">{{ $subItem['skor'] }}</span>
+                                                                                                <span class="badge bg-brand-navy text-white px-2.5 py-1.5 fw-bold shadow-sm" style="font-size: 0.8rem;">
+                                                                                                    <i class="bi bi-star-fill text-warning me-1" style="font-size: 0.72rem;"></i>{{ $subItem['skor'] ?? '-' }}
+                                                                                                </span>
                                                                                             </td>
                                                                                             <td class="text-muted fst-italic">{{ $subItem['catatan'] ?: '-' }}</td>
                                                                                         </tr>
