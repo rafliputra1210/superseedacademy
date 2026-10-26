@@ -32,26 +32,47 @@ class AsesorManagerController extends Controller
             'password'              => 'required|string|min:8|confirmed',
             'password_confirmation' => 'required|string',
         ], [
-            'username.regex'    => 'Username hanya boleh mengandung huruf, angka, dan underscore.',
-            'password.min'      => 'Password minimal 8 karakter.',
-            'password.confirmed'=> 'Konfirmasi password tidak cocok.',
+            'name.required'                  => 'Nama lengkap asesor wajib diisi.',
+            'username.required'              => 'Username wajib diisi.',
+            'username.regex'                 => 'Username hanya boleh mengandung huruf, angka, dan underscore (_).',
+            'username.unique'                => 'Username ini sudah digunakan, silakan pilih username lain.',
+            'password.required'              => 'Password wajib diisi.',
+            'password.min'                   => 'Password minimal 8 karakter.',
+            'password.confirmed'             => 'Konfirmasi password tidak cocok dengan password yang dimasukkan.',
+            'password_confirmation.required' => 'Konfirmasi password wajib diisi.',
         ]);
 
-        $newUser = User::create([
-            'name'     => $request->name,
-            'username' => $request->username,
-            'password' => Hash::make($request->password),
-            'role'     => 'asesor', // Role selalu di-hardcode, tidak dari input user
-        ]);
+        try {
+            $newUser = User::create([
+                'name'     => $request->name,
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+                'role'     => 'asesor', // Role selalu di-hardcode, tidak dari input user
+            ]);
 
-        Log::info('New asesor account created by admin', [
-            'admin_id'         => Auth::id(),
-            'new_asesor_id'    => $newUser->id,
-            'new_asesor_username' => $newUser->username,
-            'ip'               => $request->ip(),
-        ]);
+            Log::info('New asesor account created by admin', [
+                'admin_id'            => Auth::id(),
+                'new_asesor_id'       => $newUser->id,
+                'new_asesor_username' => $newUser->username,
+                'ip'                  => $request->ip(),
+            ]);
 
-        return back()->with('success', 'Akun Asesor berhasil ditambahkan!');
+            return back()->with('success', 'Akun Asesor berhasil ditambahkan!');
+        } catch (\Throwable $e) {
+            Log::error('Failed to create asesor account', [
+                'error'    => $e->getMessage(),
+                'admin_id' => Auth::id(),
+            ]);
+
+            $message = 'Gagal menyimpan akun asesor.';
+            if (str_contains(strtolower($e->getMessage()), 'truncated') || str_contains(strtolower($e->getMessage()), 'enum')) {
+                $message .= ' Database server belum mendukung role "asesor". Silakan jalankan `php artisan migrate` di terminal hosting Anda atau jalankan query ALTER TABLE di database.';
+            } else {
+                $message .= ' Error: ' . $e->getMessage();
+            }
+
+            return back()->withInput()->with('error', $message);
+        }
     }
 
     /**
