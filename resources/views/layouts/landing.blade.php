@@ -21,31 +21,8 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            blue: '#059669', /* Emerald 600 - renamed internally to green but keeping class name for compatibility */
-                            navy: '#022c22', /* Emerald 950 */
-                            light: '#ecfdf5', /* Emerald 50 */
-                            gray: '#64748B'
-                        }
-                    },
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-                        'hover': '0 10px 30px -5px rgba(5, 150, 105, 0.1)',
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS via Vite -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #334155; }
