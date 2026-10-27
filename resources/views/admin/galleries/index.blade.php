@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Manajemen Galeri')
 
 @section('content')
@@ -56,8 +56,10 @@
         </table>
     </div>
     
-    <div class="d-flex justify-content-end mt-3">
-        {{ $galleries->links() }}
-    </div>
+    @if($galleries->hasPages())
+        <div class="mt-3 pt-3 border-top">
+            {{ $galleries->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
 </div>
 @endsection

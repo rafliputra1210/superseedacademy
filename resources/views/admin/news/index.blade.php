@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Manajemen Berita & Liputan')
 
 @section('content')
@@ -66,6 +66,10 @@
             </tbody>
         </table>
     </div>
-    <div class="mt-3">{{ $news->links() }}</div>
+    @if($news->hasPages())
+        <div class="mt-3 pt-3 border-top">
+            {{ $news->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
 </div>
 @endsection

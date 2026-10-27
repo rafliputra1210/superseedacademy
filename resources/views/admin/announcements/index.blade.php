@@ -41,6 +41,10 @@
         </div>
         @endforelse
     </div>
-    <div class="mt-4">{{ $announcements->links() }}</div>
+    @if($announcements->hasPages())
+        <div class="mt-4 pt-3 border-top">
+            {{ $announcements->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
 </div>
 @endsection

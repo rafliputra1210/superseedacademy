@@ -98,6 +98,62 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Custom Pagination Styling & Brand Integration */
+        .pagination {
+            margin-bottom: 0;
+            gap: 5px;
+        }
+        .pagination .page-item .page-link {
+            border-radius: 8px !important;
+            color: #475569;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 6px 13px;
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+        }
+        .pagination .page-item .page-link:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            color: var(--brand-green);
+            transform: translateY(-1px);
+        }
+        .pagination .page-item.active .page-link {
+            background-color: var(--brand-green) !important;
+            border-color: var(--brand-green) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(4, 120, 87, 0.3);
+        }
+        .pagination .page-item.disabled .page-link {
+            color: #94a3b8;
+            background-color: #f8fafc;
+            border-color: #e2e8f0;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* Anti-Explosion Rule for any SVG icons */
+        svg.w-5,
+        svg.h-5,
+        .pagination svg,
+        .pagination-wrapper svg,
+        nav[role="navigation"] svg {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">

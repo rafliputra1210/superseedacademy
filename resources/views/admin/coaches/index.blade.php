@@ -133,6 +133,10 @@
             </tbody>
         </table>
     </div>
-    <div class="mt-3">{{ $coaches->links() }}</div>
+    @if($coaches->hasPages())
+        <div class="mt-3 pt-3 border-top">
+            {{ $coaches->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
 </div>
 @endsection

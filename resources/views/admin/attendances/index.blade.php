@@ -311,7 +311,11 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-2">{{ $attendances->links() }}</div>
+            @if($attendances->hasPages())
+                <div class="mt-3 pt-3 border-top">
+                    {{ $attendances->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

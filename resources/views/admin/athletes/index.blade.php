@@ -330,14 +330,8 @@
 
     {{-- Pagination yang Dirapikan --}}
     @if($athletes->hasPages())
-    <div class="px-4 py-3 border-top d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="background: #f8fafc;">
-        <p class="text-muted small mb-0 text-center text-md-start">
-            Menampilkan <strong class="text-dark">{{ $athletes->firstItem() }}</strong>–<strong class="text-dark">{{ $athletes->lastItem() }}</strong> dari <strong class="text-dark">{{ $athletes->total() }}</strong> siswa
-        </p>
-        <div class="pagination-wrapper">
-            {{-- Menggunakan view pagination bootstrap-5 jika tersedia, atau fallback default yang sudah di-override --}}
-            {{ $athletes->links('pagination::bootstrap-5') }}
-        </div>
+    <div class="px-4 py-3 border-top" style="background: #f8fafc;">
+        {{ $athletes->links('pagination::bootstrap-5') }}
     </div>
     @endif
 </div>

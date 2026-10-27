@@ -1,4 +1,4 @@
-﻿@extends('layouts.landing')
+@extends('layouts.landing')
 @section('title', 'Berita & Artikel')
 
 @section('content')
@@ -55,6 +55,6 @@
         @endforelse
     </div>
     
-    <div class="mt-10">{{ $news->links() }}</div>
+    <div class="mt-10">{{ $news->links('pagination::tailwind') }}</div>
 </div>
 @endsection

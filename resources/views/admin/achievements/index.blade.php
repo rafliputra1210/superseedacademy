@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Manajemen Prestasi')
 
 @section('content')
@@ -66,8 +66,10 @@
         </table>
     </div>
     
-    <div class="d-flex justify-content-end mt-3">
-        {{ $achievements->links() }}
-    </div>
+    @if($achievements->hasPages())
+        <div class="mt-3 pt-3 border-top">
+            {{ $achievements->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
 </div>
 @endsection

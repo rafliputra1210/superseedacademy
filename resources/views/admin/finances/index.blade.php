@@ -217,7 +217,11 @@
             </tbody>
         </table>
     </div>
-    <div class="mt-3">{{ $finances->links() }}</div>
+    @if($finances->hasPages())
+        <div class="mt-3 pt-3 border-top">
+            {{ $finances->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
 </div>
 
 <!-- Modal Generate Bulk Tagihan -->
