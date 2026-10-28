@@ -1,10 +1,10 @@
 @import 'tailwindcss';
 
-/* Sumber file yang akan discan oleh Tailwind (Sangat Penting!) */
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../views/**/*.blade.php'; 
-@source '../js/**/*.js';
+/* Sumber file yang akan discan oleh Tailwind (Sederhanakan jalurnya) */
+@source "../views";
+@source "../js";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
 
 /* Tema Khusus Super Seed Academy (Konversi dari CDN sebelumnya) */
 @theme {

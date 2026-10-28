@@ -129,10 +129,9 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <!-- Tombol Aksi -->
-                                <div class="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                <div class="flex items-center justify-end gap-1 transition-opacity">
                                     <!-- Tombol Detail -->
-                                    <a href="#" class="p-2 text-slate-400 hover:text-brand-blue hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Detail Biografi">
-                                        <i class="bi bi-eye text-lg"></i>
+                                    <a href="{{ route('admin.biography.show', $bio->id) }}" class="...">                                        <i class="bi bi-eye"></i>
                                     </a>
                                     <!-- Tombol Edit -->
                                     <a href="{{ route('admin.biography.edit', $bio->id) }}" class="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" title="Edit Biografi">

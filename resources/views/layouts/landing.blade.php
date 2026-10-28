@@ -2,6 +2,7 @@
 <html lang="id">
 
 <head>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="#064e3b">
     <meta name="mobile-web-app-capable" content="yes">

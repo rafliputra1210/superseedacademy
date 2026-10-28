@@ -178,7 +178,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/assessment-categories/{category}/toggle', [AssessmentCategoryController::class, 'toggleActive'])
         ->middleware('throttle:30,1')
         ->name('assessment_categories.toggle');
-    Route::resource('biography', \App\Http\Controllers\Admin\AthleteBiographyController::class);
+    
+        Route::resource('biography', \App\Http\Controllers\Admin\AthleteBiographyController::class);
+        Route::post('biography/{id}/achievement', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeAchievement'])->name('biography.achievement.store');
+        Route::post('biography/{id}/statistic', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeStatistic'])->name('biography.statistic.store');
+        Route::get('biography/{id}/print', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'print'])->name('biography.print');
 });
 
 // =============================================================================

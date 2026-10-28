@@ -46,17 +46,16 @@ class SecurityHeaders
         // Sesuaikan dengan CDN yang benar-benar digunakan di proyek ini
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net fonts.googleapis.com",
             "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com fonts.gstatic.com",
             "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net data:",
             "img-src 'self' data: blob: *",
-            "connect-src 'self'",
+            "connect-src 'self' cdn.jsdelivr.net fonts.googleapis.com fonts.gstatic.com",
             "media-src 'self' blob:",
             "object-src 'none'",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
-            "upgrade-insecure-requests",
         ]);
         $response->headers->set('Content-Security-Policy', $csp);
 
