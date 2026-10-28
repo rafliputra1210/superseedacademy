@@ -28,4 +28,8 @@ class Athlete extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function biography()
+    {
+        return $this->hasOne(AthleteBiography::class);
+    }
 }

@@ -8,8 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <!-- QRCode JS Library (Stabil & Tajam) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- QRCode JS Library - Local File -->
+    <script src="/js/qrcode.min.js"></script>
 
     <style>
         body {
@@ -180,6 +180,7 @@
             margin: 0 auto;
             width: 105px !important;
             height: 105px !important;
+            image-rendering: crisp-edges;
         }
         
         /* Label Nama Siswa & Nomor Induk di Bawah Gambar QR */
@@ -402,14 +403,16 @@
                     const container = document.getElementById("qr_box_{{ $athlete->id }}");
                     const qrVal = "{{ $athlete->kode_barcode }}";
                     if (container && qrVal) {
-                        new QRCode(container, {
+                        const qrObj = new QRCode(container, {
                             text: qrVal,
-                            width: 105,
-                            height: 105,
+                            width: 150,
+                            height: 150,
                             colorDark: "#047857",
                             colorLight: "#ffffff",
                             correctLevel: QRCode.CorrectLevel.H
                         });
+                        // Simpan referensi QRCode object pada container untuk download
+                        container._qrValue = qrVal;
                     }
                 })();
             @endforeach
@@ -453,83 +456,123 @@
 
         // 2. FUNGSI DOWNLOAD SINGLE QR BERISI NAMA & NOMOR INDUK
         function downloadQrComposite(athleteId, athleteSlug, athleteName, athleteNim) {
-            const container = document.getElementById('qr_box_' + athleteId);
-            if (!container) return;
-            
-            const img = container.querySelector('img');
-            const sourceCanvas = container.querySelector('canvas');
+            try {
+                const container = document.getElementById('qr_box_' + athleteId);
+                const qrVal = (container && container.dataset.qrVal) ? container.dataset.qrVal : athleteNim;
 
-            const tempCanvas = document.createElement('canvas');
-            const ctx = tempCanvas.getContext('2d');
+                if (!qrVal) {
+                    console.error('QR Value kosong untuk atlet:', athleteId);
+                    return;
+                }
 
-            // Ukuran canvas hasil download: 240px x 300px
-            tempCanvas.width = 240;
-            tempCanvas.height = 310;
+                // Step 1: Buat div hidden untuk menampung QR Code sementara
+                const hiddenWrapper = document.createElement('div');
+                hiddenWrapper.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:150px;height:150px;';
+                document.body.appendChild(hiddenWrapper);
 
-            // 1. Latar Belakang Putih
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                // Step 2: Generate QR baru ke canvas (bukan img) — gunakan useSVG: false agar dapat canvas
+                const qrInstance = new QRCode(hiddenWrapper, {
+                    text: qrVal,
+                    width: 150,
+                    height: 150,
+                    colorDark: '#047857',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
 
-            // 2. Garis Border Hijau
-            ctx.strokeStyle = '#047857';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(6, 6, tempCanvas.width - 12, tempCanvas.height - 12);
+                // Step 3: Tunggu render selesai lalu gambar ke tempCanvas
+                setTimeout(() => {
+                    try {
+                        const qrCanvas = hiddenWrapper.querySelector('canvas');
+                        const qrImg   = hiddenWrapper.querySelector('img');
 
-            // 3. Header Text "SUPERSEED ACADEMY"
-            ctx.fillStyle = '#064e3b';
-            ctx.font = 'bold 11px "Segoe UI", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('SUPERSEED ACADEMY', tempCanvas.width / 2, 28);
+                        // Buat canvas output
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width  = 240;
+                        tempCanvas.height = 310;
+                        const ctx = tempCanvas.getContext('2d');
 
-            // 4. Render Gambar QR Code
-            const drawQr = (qrImgSource) => {
-                ctx.drawImage(qrImgSource, (tempCanvas.width - 150) / 2, 38, 150, 150);
+                        // Latar Belakang Putih
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, 240, 310);
 
-                // 5. Nama Atlet
-                ctx.fillStyle = '#0f172a';
-                ctx.font = 'bold 13px "Segoe UI", sans-serif';
-                ctx.textAlign = 'center';
-                
-                // Truncate nama jika terlalu panjang
-                let displayName = athleteName.toUpperCase();
-                if (displayName.length > 22) displayName = displayName.substring(0, 20) + '...';
-                ctx.fillText(displayName, tempCanvas.width / 2, 212);
+                        // Border Hijau
+                        ctx.strokeStyle = '#047857';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(6, 6, 228, 298);
 
-                // 6. Box Nomor Induk (SSA-2026-xxxx)
-                ctx.fillStyle = '#ecfdf5';
-                ctx.strokeStyle = '#a7f3d0';
-                ctx.lineWidth = 1;
-                const boxW = 150;
-                const boxH = 26;
-                const boxX = (tempCanvas.width - boxW) / 2;
-                const boxY = 224;
-                ctx.fillRect(boxX, boxY, boxW, boxH);
-                ctx.strokeRect(boxX, boxY, boxW, boxH);
+                        // Header
+                        ctx.fillStyle = '#064e3b';
+                        ctx.font = 'bold 11px Arial, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('SUPERSEED ACADEMY', 120, 28);
 
-                ctx.fillStyle = '#047857';
-                ctx.font = 'bold 12px monospace';
-                ctx.fillText(athleteNim || 'SSA-2026', tempCanvas.width / 2, boxY + 18);
+                        // Gambar QR ke canvas — pakai canvas jika ada (tidak tainted), fallback ke img
+                        const doFinalize = (qrSrc) => {
+                            try {
+                                ctx.drawImage(qrSrc, 45, 38, 150, 150);
+                            } catch (e) {
+                                console.error('drawImage gagal:', e);
+                                document.body.removeChild(hiddenWrapper);
+                                return;
+                            }
 
-                // 7. Footer Text
-                ctx.fillStyle = '#64748b';
-                ctx.font = '9px "Segoe UI", sans-serif';
-                ctx.fillText('KARTU ABSENSI RESMI ATLET', tempCanvas.width / 2, 280);
+                            // Nama Atlet
+                            ctx.fillStyle = '#0f172a';
+                            ctx.font = 'bold 13px Arial, sans-serif';
+                            ctx.textAlign = 'center';
+                            let displayName = athleteName.toUpperCase();
+                            if (displayName.length > 22) displayName = displayName.substring(0, 20) + '...';
+                            ctx.fillText(displayName, 120, 212);
 
-                // Unduh sebagai PNG
-                const link = document.createElement('a');
-                link.download = 'QR_' + athleteSlug + '_' + (athleteNim || 'SSA-2026') + '.png';
-                link.href = tempCanvas.toDataURL('image/png');
-                link.click();
-            };
+                            // Box Nomor Induk
+                            ctx.fillStyle = '#ecfdf5';
+                            ctx.strokeStyle = '#a7f3d0';
+                            ctx.lineWidth = 1;
+                            ctx.fillRect(45, 224, 150, 26);
+                            ctx.strokeRect(45, 224, 150, 26);
+                            ctx.fillStyle = '#047857';
+                            ctx.font = 'bold 12px Courier New, monospace';
+                            ctx.fillText(athleteNim || 'SSA-2026', 120, 242);
 
-            if (img && img.src && img.src.startsWith('data:image')) {
-                const qImage = new Image();
-                qImage.onload = () => drawQr(qImage);
-                qImage.src = img.src;
-            } else if (sourceCanvas) {
-                drawQr(sourceCanvas);
-            } else {
-                alert('QR Code belum selesai dibuat.');
+                            // Footer
+                            ctx.fillStyle = '#64748b';
+                            ctx.font = '9px Arial, sans-serif';
+                            ctx.fillText('KARTU ABSENSI RESMI ATLET', 120, 295);
+
+                            // Download
+                            try {
+                                const link = document.createElement('a');
+                                link.download = 'QR_' + athleteSlug + '_' + (athleteNim || 'SSA-2026') + '.png';
+                                link.href = tempCanvas.toDataURL('image/png');
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            } catch (e) {
+                                console.error('Download gagal (toDataURL error):', e);
+                            }
+
+                            document.body.removeChild(hiddenWrapper);
+                        };
+
+                        if (qrCanvas) {
+                            doFinalize(qrCanvas);
+                        } else if (qrImg && qrImg.complete) {
+                            doFinalize(qrImg);
+                        } else if (qrImg) {
+                            qrImg.onload = () => doFinalize(qrImg);
+                        } else {
+                            console.error('QR tidak berhasil dirender untuk atlet:', athleteId);
+                            document.body.removeChild(hiddenWrapper);
+                        }
+                    } catch (innerErr) {
+                        console.error('Error saat menggambar QR:', innerErr);
+                        if (document.body.contains(hiddenWrapper)) document.body.removeChild(hiddenWrapper);
+                    }
+                }, 200);
+
+            } catch (err) {
+                console.error('downloadQrComposite error:', err);
             }
         }
 

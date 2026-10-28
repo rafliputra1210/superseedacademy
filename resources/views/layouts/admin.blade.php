@@ -265,6 +265,12 @@
                         <i class="bi bi-people-fill"></i> Data Atlet (Murid)
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.biography.index') }}" class="nav-link {{ request()->routeIs('admin.biography.*') ? 'bg-blue-900 text-white rounded-md' : '' }}">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Biografi Akademisi</span>
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('admin.coaches.index') }}" class="{{ request()->routeIs('admin.coaches.*') ? 'active' : '' }}">
                         <i class="bi bi-person-badge-fill"></i> Data Coach
