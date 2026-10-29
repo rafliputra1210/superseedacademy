@@ -613,9 +613,11 @@
         <!-- PROFIL -->
         <section class="profil">
             <div class="foto">
-                @if ($biography->foto_profil)
-                    <img src="{{ asset('storage/' . $biography->foto_profil) }}"
-                        alt="Foto {{ $biography->nama_atlet }}">
+                @php
+                    $fotoSrc = $biography->foto_base64 ?? $biography->foto_url;
+                @endphp
+                @if ($fotoSrc)
+                    <img src="{{ $fotoSrc }}" alt="Foto {{ $biography->nama_atlet }}">
                 @else
                     <span class="inisial">{{ $inisial }}</span>
                 @endif

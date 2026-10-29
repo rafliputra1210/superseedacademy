@@ -159,10 +159,14 @@
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5 bg-slate-50 rounded-xl p-5 border border-slate-200">
                     {{-- Preview Foto --}}
                     <div class="shrink-0">
-                        @if($biography->foto_profil && file_exists(public_path('storage/' . $biography->foto_profil)))
-                            <img src="{{ asset('storage/' . $biography->foto_profil) }}"
+                        @php
+                            $editFoto = $biography->foto_url;
+                        @endphp
+                        @if($editFoto)
+                            <img src="{{ $editFoto }}"
                                  alt="Foto {{ $biography->athlete->nama ?? '' }}"
-                                 class="w-20 h-20 rounded-xl object-cover border-2 border-white shadow-md">
+                                 class="w-20 h-20 rounded-xl object-cover border-2 border-white shadow-md"
+                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-20 h-20 rounded-xl bg-slate-200 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400\'><i class=\'bi bi-person-fill text-3xl\'></i><span class=\'text-[10px] mt-0.5 font-medium\'>Tanpa Foto</span></div>';">
                         @else
                             <div class="w-20 h-20 rounded-xl bg-slate-200 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
                                 <i class="bi bi-person-fill text-3xl"></i>

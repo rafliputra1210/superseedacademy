@@ -79,4 +79,42 @@ class AthleteBiography extends Model
     {
         return $this->hasMany(AthleteGallery::class);
     }
+
+    /**
+     * URL Foto Profil Atlet: Cek foto_profil biografi, fallback ke foto atlet jika kosong.
+     */
+    public function getFotoUrlAttribute()
+    {
+        // 1. Ambil dari foto_profil biografi
+        if (!empty($this->foto_profil)) {
+            return storage_img_url($this->foto_profil);
+        }
+
+        // 2. Fallback ke foto master atlet jika ada
+        if ($this->athlete && !empty($this->athlete->foto)) {
+            return storage_img_url($this->athlete->foto);
+        }
+
+        return null;
+    }
+
+    /**
+     * Base64 Data URI Foto Profil Atlet (sangat aman untuk halaman print PDF).
+     */
+    public function getFotoBase64Attribute()
+    {
+        // 1. Cek dari foto_profil biografi
+        if (!empty($this->foto_profil)) {
+            $b64 = file_to_base64($this->foto_profil);
+            if ($b64) return $b64;
+        }
+
+        // 2. Fallback ke foto master atlet
+        if ($this->athlete && !empty($this->athlete->foto)) {
+            $b64 = file_to_base64($this->athlete->foto);
+            if ($b64) return $b64;
+        }
+
+        return null;
+    }
 }

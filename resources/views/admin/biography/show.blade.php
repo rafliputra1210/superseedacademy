@@ -292,8 +292,11 @@
             <div class="sp-avatar-box">
                 {{-- Foto Profil --}}
                 <div class="sp-avatar">
-                    @if($biography->foto_profil && file_exists(public_path('storage/' . $biography->foto_profil)))
-                        <img src="{{ asset('storage/' . $biography->foto_profil) }}" alt="Foto Atlet">
+                    @php
+                        $fotoSrc = $biography->foto_url;
+                    @endphp
+                    @if($fotoSrc)
+                        <img src="{{ $fotoSrc }}" alt="Foto Atlet" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'sp-avatar-ph\'><i class=\'bi bi-person-fill\'></i></div>';">
                     @else
                         <div class="sp-avatar-ph"><i class="bi bi-person-fill"></i></div>
                     @endif
@@ -514,7 +517,8 @@
                                             <h4 class="font-bold text-slate-800 text-sm mb-0.5">{{ $ach->nama_turnamen }}</h4>
                                             <div class="text-xs text-slate-600">
                                                 <span class="font-bold text-amber-600">{{ $ach->pencapaian }}</span> &bull; 
-                                                Tingkat {{ $ach->tingkat }} &bull; 
+                                                Tingkat {{ $ach->tingkat }}
+                                                @if(!empty($ach->kategori) && $ach->kategori !== '-') &bull; Kategori {{ $ach->kategori }} @endif &bull; 
                                                 {{ \Carbon\Carbon::parse($ach->tanggal)->translatedFormat('d M Y') }}
                                             </div>
                                         </div>
@@ -612,9 +616,15 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tanggal Turnamen *</label>
-                    <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" required class="w-full px-3 py-2 border rounded-lg border-slate-300">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tanggal Turnamen *</label>
+                        <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" required class="w-full px-3 py-2 border rounded-lg border-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Kategori Turnamen</label>
+                        <input type="text" name="kategori" placeholder="Cth: U-12, U-15, Umum" class="w-full px-3 py-2 border rounded-lg border-slate-300">
+                    </div>
                 </div>
             </div>
             <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">

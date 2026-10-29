@@ -39,15 +39,44 @@ class AthleteBiographyController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'athlete_id' => 'required|exists:athletes,id',
-            'kategori_kelas' => 'required|in:01,02,03,04', // Sesuai kode spesifikasi[cite: 16]
+        $validated = $request->validate([
+            'athlete_id'        => 'required|exists:athletes,id',
+            'kategori_kelas'    => 'required|in:01,02,03,04',
             'tanggal_bergabung' => 'required|date',
-            'posisi' => 'nullable|string',
-            // ... tambahkan validasi lain[cite: 17, 18]
+            'posisi'            => 'nullable|string',
+            'foto_profil'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
-        AthleteBiography::create($request->all());
+        $data = $request->except('foto_profil');
+
+        if ($request->hasFile('foto_profil')) {
+            $file = $request->file('foto_profil');
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            $fileName = time() . '_' . \Illuminate\Support\Str::random(20) . '.' . $ext;
+
+            $destDir = public_path('uploads/biography_photos');
+            if (!file_exists($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+            $file->move($destDir, $fileName);
+
+            // Copy juga ke storage disk public untuk redundansi
+            $storageDir = storage_path('app/public/biography_photos');
+            if (!file_exists($storageDir)) {
+                @mkdir($storageDir, 0755, true);
+            }
+            @copy($destDir . '/' . $fileName, $storageDir . '/' . $fileName);
+
+            $data['foto_profil'] = 'uploads/biography_photos/' . $fileName;
+        } else {
+            // Jika tidak upload, gunakan foto dari master data atlet jika ada
+            $athlete = Athlete::find($request->athlete_id);
+            if ($athlete && !empty($athlete->foto)) {
+                $data['foto_profil'] = $athlete->foto;
+            }
+        }
+
+        AthleteBiography::create($data);
 
         return redirect()->route('admin.biography.index')->with('success', 'Biografi berhasil ditambahkan.');
     }
@@ -60,21 +89,51 @@ class AthleteBiographyController extends Controller
     public function update(Request $request, AthleteBiography $biography)
     {
         $request->validate([
-            'kategori_kelas' => 'required|in:01,02,03,04',
+            'kategori_kelas'    => 'required|in:01,02,03,04',
             'tanggal_bergabung' => 'required|date',
-            'status_aktif' => 'required|boolean',
-            'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'status_aktif'      => 'required|boolean',
+            'foto_profil'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
         $data = $request->except('foto_profil');
 
         // Proses jika ada upload foto profil baru
         if ($request->hasFile('foto_profil')) {
+            $file = $request->file('foto_profil');
+            $ext = strtolower($file->guessExtension() ?: 'jpg');
+            $fileName = time() . '_' . \Illuminate\Support\Str::random(20) . '.' . $ext;
+
             // Hapus foto lama jika ada
-            if ($biography->foto_profil && \Illuminate\Support\Facades\Storage::disk('public')->exists($biography->foto_profil)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($biography->foto_profil);
+            if ($biography->foto_profil) {
+                $oldBase = basename($biography->foto_profil);
+                $oldFiles = [
+                    public_path('uploads/biography_photos/' . $oldBase),
+                    public_path($biography->foto_profil),
+                    storage_path('app/public/biography_photos/' . $oldBase),
+                    storage_path('app/public/' . $biography->foto_profil),
+                ];
+                foreach ($oldFiles as $f) {
+                    if (file_exists($f) && is_file($f)) {
+                        @unlink($f);
+                    }
+                }
             }
-            $data['foto_profil'] = $request->file('foto_profil')->store('biography_photos', 'public');
+
+            // Simpan ke public/uploads/biography_photos
+            $destDir = public_path('uploads/biography_photos');
+            if (!file_exists($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+            $file->move($destDir, $fileName);
+
+            // Copy juga ke storage disk public
+            $storageDir = storage_path('app/public/biography_photos');
+            if (!file_exists($storageDir)) {
+                @mkdir($storageDir, 0755, true);
+            }
+            @copy($destDir . '/' . $fileName, $storageDir . '/' . $fileName);
+
+            $data['foto_profil'] = 'uploads/biography_photos/' . $fileName;
         }
 
         $biography->update($data);
@@ -86,8 +145,19 @@ class AthleteBiographyController extends Controller
     public function destroy(AthleteBiography $biography)
     {
         // Hapus file foto dari server jika ada
-        if ($biography->foto_profil && \Illuminate\Support\Facades\Storage::disk('public')->exists($biography->foto_profil)) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($biography->foto_profil);
+        if ($biography->foto_profil) {
+            $oldBase = basename($biography->foto_profil);
+            $oldFiles = [
+                public_path('uploads/biography_photos/' . $oldBase),
+                public_path($biography->foto_profil),
+                storage_path('app/public/biography_photos/' . $oldBase),
+                storage_path('app/public/' . $biography->foto_profil),
+            ];
+            foreach ($oldFiles as $f) {
+                if (file_exists($f) && is_file($f)) {
+                    @unlink($f);
+                }
+            }
         }
         
         $biography->delete();
@@ -119,8 +189,26 @@ class AthleteBiographyController extends Controller
     }
     public function storeAchievement(Request $request, $id)
     {
-        $biography = \App\Models\AthleteBiography::findOrFail($id);
-        $biography->achievements()->create($request->all());
+        $biography = \App\Models\AthleteBiography::with('athlete')->findOrFail($id);
+
+        $validated = $request->validate([
+            'nama_turnamen' => 'required|string|max:255',
+            'pencapaian'    => 'required|string|max:255',
+            'tingkat'       => 'required|string|max:100',
+            'kategori'      => 'nullable|string|max:100',
+            'tanggal'       => 'required|date',
+            'penghargaan'   => 'nullable|string|max:255',
+            'keterangan'    => 'nullable|string',
+        ]);
+
+        // Pastikan kolom kategori selalu memiliki nilai (fallback KU atlet atau tanda '-')
+        if (empty($validated['kategori'])) {
+            $validated['kategori'] = !empty($biography->athlete->kelompok_umur)
+                ? 'KU-' . $biography->athlete->kelompok_umur
+                : '-';
+        }
+
+        $biography->achievements()->create($validated);
         return back()->with('success', 'Prestasi berhasil ditambahkan!');
     }
 

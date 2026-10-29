@@ -81,9 +81,13 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <!-- Foto Profil -->
-                                    @if($bio->foto_profil)
-                                        <img src="{{ asset('storage/' . $bio->foto_profil) }}" alt="Foto {{ $bio->athlete->nama ?? '' }}" 
-                                            class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm">
+                                    @php
+                                        $bioFoto = $bio->foto_url;
+                                    @endphp
+                                    @if($bioFoto)
+                                        <img src="{{ $bioFoto }}" alt="Foto {{ $bio->athlete->nama ?? '' }}" 
+                                            class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm"
+                                            onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400\'><i class=\'bi bi-person-fill text-xl\'></i></div>';">
                                     @else
                                         <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
                                             <i class="bi bi-person-fill text-xl"></i>
