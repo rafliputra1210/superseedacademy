@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,17 +10,15 @@
     @php
         \Carbon\Carbon::setLocale('id');
 
-        $stats        = $biography->statistics ?? collect();
+        $stats = $biography->statistics ?? collect();
         $achievements = $biography->achievements ?? collect();
 
-        $totalMain   = $stats->count();
-        $totalMenit  = $stats->sum('menit_bermain');
-        $totalGol    = $stats->sum('gol');
+        $totalMain = $stats->count();
+        $totalMenit = $stats->sum('menit_bermain');
+        $totalGol = $stats->sum('gol');
         $totalAssist = $stats->sum('assist');
 
-        $bergabung = $biography->tanggal_bergabung
-            ? \Carbon\Carbon::parse($biography->tanggal_bergabung)
-            : null;
+        $bergabung = $biography->tanggal_bergabung ? \Carbon\Carbon::parse($biography->tanggal_bergabung) : null;
 
         $lama = $bergabung ? $bergabung->diff(now()) : null;
 
@@ -39,11 +38,13 @@
             --slate-400: #94a3b8;
             --slate-200: #e2e8f0;
             --slate-100: #f1f5f9;
-            --slate-50:  #f8fafc;
+            --slate-50: #f8fafc;
             --rose: #e11d48;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -61,7 +62,7 @@
             margin: 24px auto;
             padding: 14mm 15mm 12mm;
             background: #fff;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
         }
@@ -75,6 +76,7 @@
             border-bottom: 4px solid var(--navy);
             position: relative;
         }
+
         .kop::after {
             content: "";
             position: absolute;
@@ -83,9 +85,24 @@
             bottom: -7px;
             border-bottom: 1px solid var(--green);
         }
-        .kop-logo { width: 80px; flex-shrink: 0; }
-        .kop-logo img { width: 100%; height: auto; max-height: 90px; object-fit: contain; }
-        .kop-text { flex: 1; text-align: center; }
+
+        .kop-logo {
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .kop-logo img {
+            width: 100%;
+            height: auto;
+            max-height: 90px;
+            object-fit: contain;
+        }
+
+        .kop-text {
+            flex: 1;
+            text-align: center;
+        }
+
         .kop-text h1 {
             margin: 0;
             font-size: 26px;
@@ -94,6 +111,7 @@
             color: var(--navy);
             line-height: 1.1;
         }
+
         .kop-text .sub {
             margin: 4px 0 0;
             font-size: 12px;
@@ -102,18 +120,24 @@
             color: var(--green);
             text-transform: uppercase;
         }
+
         .kop-text .alamat {
             margin-top: 6px;
             font-size: 10.5px;
             color: var(--slate-500);
             line-height: 1.5;
         }
-        .kop-spacer { width: 80px; flex-shrink: 0; }
+
+        .kop-spacer {
+            width: 80px;
+            flex-shrink: 0;
+        }
 
         .judul-dokumen {
             margin: 16px 0 14px;
             text-align: center;
         }
+
         .judul-dokumen h2 {
             margin: 0;
             font-size: 14px;
@@ -134,6 +158,7 @@
             border-left: 5px solid var(--green);
             border-radius: 12px;
         }
+
         .foto {
             width: 96px;
             height: 96px;
@@ -146,13 +171,23 @@
             align-items: center;
             justify-content: center;
         }
-        .foto img { width: 100%; height: 100%; object-fit: cover; }
+
+        .foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .foto .inisial {
             font-size: 38px;
             font-weight: 900;
             color: var(--slate-400);
         }
-        .profil-info { flex: 1; }
+
+        .profil-info {
+            flex: 1;
+        }
+
         .profil-info h3 {
             margin: 0;
             font-size: 22px;
@@ -160,18 +195,21 @@
             text-transform: uppercase;
             color: var(--navy);
         }
+
         .profil-info .meta {
             margin-top: 3px;
             font-size: 13px;
             font-weight: 700;
             color: var(--green);
         }
+
         .chips {
             margin-top: 10px;
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
         }
+
         .chip {
             padding: 4px 10px;
             font-size: 11px;
@@ -181,7 +219,11 @@
             border: 1px solid var(--slate-200);
             border-radius: 999px;
         }
-        .chip span { color: var(--slate-500); font-weight: 600; }
+
+        .chip span {
+            color: var(--slate-500);
+            font-weight: 600;
+        }
 
         .badge-status {
             display: inline-block;
@@ -191,8 +233,18 @@
             font-weight: 800;
             letter-spacing: 0.05em;
         }
-        .badge-aktif    { background: var(--green-soft); color: var(--green); border: 1px solid #a7f3d0; }
-        .badge-nonaktif { background: #fff1f2; color: var(--rose); border: 1px solid #fecdd3; }
+
+        .badge-aktif {
+            background: var(--green-soft);
+            color: var(--green);
+            border: 1px solid #a7f3d0;
+        }
+
+        .badge-nonaktif {
+            background: #fff1f2;
+            color: var(--rose);
+            border: 1px solid #fecdd3;
+        }
 
         /* ===== Ringkasan Angka ===== */
         .ringkasan {
@@ -201,6 +253,7 @@
             gap: 10px;
             margin-top: 14px;
         }
+
         .kartu-angka {
             padding: 10px 8px;
             text-align: center;
@@ -208,12 +261,14 @@
             border-radius: 10px;
             background: #fff;
         }
+
         .kartu-angka .nilai {
             font-size: 20px;
             font-weight: 900;
             color: var(--navy);
             line-height: 1;
         }
+
         .kartu-angka .label {
             margin-top: 5px;
             font-size: 9.5px;
@@ -229,8 +284,15 @@
             gap: 22px;
             margin-top: 20px;
         }
-        .kolom-kiri  { width: 34%; flex-shrink: 0; }
-        .kolom-kanan { width: 66%; }
+
+        .kolom-kiri {
+            width: 34%;
+            flex-shrink: 0;
+        }
+
+        .kolom-kanan {
+            width: 66%;
+        }
 
         .judul-seksi {
             margin: 0 0 10px;
@@ -245,6 +307,7 @@
             align-items: center;
             gap: 6px;
         }
+
         .judul-seksi::before {
             content: "";
             width: 6px;
@@ -252,24 +315,33 @@
             background: var(--green);
             border-radius: 50%;
         }
-        .blok { margin-bottom: 22px; }
+
+        .blok {
+            margin-bottom: 22px;
+        }
 
         .tabel-info {
             width: 100%;
             border-collapse: collapse;
             font-size: 11.5px;
         }
+
         .tabel-info td {
             padding: 6px 0;
             border-bottom: 1px dashed var(--slate-200);
             vertical-align: top;
         }
+
         .tabel-info td:first-child {
             width: 42%;
             color: var(--slate-500);
             font-weight: 600;
         }
-        .tabel-info td:last-child { font-weight: 700; color: var(--slate-900); }
+
+        .tabel-info td:last-child {
+            font-weight: 700;
+            color: var(--slate-900);
+        }
 
         /* ===== Tabel Statistik ===== */
         .tabel-stat {
@@ -277,6 +349,7 @@
             border-collapse: collapse;
             font-size: 11.5px;
         }
+
         .tabel-stat thead th {
             padding: 8px 6px;
             font-size: 10.5px;
@@ -286,18 +359,45 @@
             color: #fff;
             background: var(--navy);
         }
-        .tabel-stat th:first-child { text-align: left; border-radius: 6px 0 0 0; }
-        .tabel-stat th:last-child  { border-radius: 0 6px 0 0; }
+
+        .tabel-stat th:first-child {
+            text-align: left;
+            border-radius: 6px 0 0 0;
+        }
+
+        .tabel-stat th:last-child {
+            border-radius: 0 6px 0 0;
+        }
+
         .tabel-stat tbody td {
             padding: 7px 6px;
             border-bottom: 1px solid var(--slate-200);
             text-align: center;
         }
-        .tabel-stat tbody tr:nth-child(even) td { background: var(--slate-50); }
-        .tabel-stat tbody td.lawan { text-align: left; }
-        .tabel-stat .lawan strong { display: block; font-size: 12px; }
-        .tabel-stat .lawan small { color: var(--slate-500); font-size: 10px; }
-        .tabel-stat .gol { font-weight: 800; color: var(--green); }
+
+        .tabel-stat tbody tr:nth-child(even) td {
+            background: var(--slate-50);
+        }
+
+        .tabel-stat tbody td.lawan {
+            text-align: left;
+        }
+
+        .tabel-stat .lawan strong {
+            display: block;
+            font-size: 12px;
+        }
+
+        .tabel-stat .lawan small {
+            color: var(--slate-500);
+            font-size: 10px;
+        }
+
+        .tabel-stat .gol {
+            font-weight: 800;
+            color: var(--green);
+        }
+
         .tabel-stat tfoot td {
             padding: 8px 6px;
             font-weight: 900;
@@ -306,7 +406,10 @@
             color: var(--navy);
             border-top: 2px solid var(--navy);
         }
-        .tabel-stat tfoot td:first-child { text-align: left; }
+
+        .tabel-stat tfoot td:first-child {
+            text-align: left;
+        }
 
         .kosong {
             padding: 14px;
@@ -319,7 +422,12 @@
         }
 
         /* ===== Prestasi ===== */
-        .prestasi-list { display: flex; flex-direction: column; gap: 8px; }
+        .prestasi-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .prestasi {
             position: relative;
             padding: 10px 12px 10px 14px;
@@ -329,6 +437,7 @@
             border-radius: 8px;
             page-break-inside: avoid;
         }
+
         .prestasi h4 {
             margin: 0 0 4px;
             font-size: 12.5px;
@@ -336,11 +445,16 @@
             color: var(--slate-900);
             padding-right: 80px;
         }
+
         .prestasi .detail {
             font-size: 11px;
             color: var(--slate-700);
         }
-        .prestasi .detail b { color: var(--green); }
+
+        .prestasi .detail b {
+            color: var(--green);
+        }
+
         .prestasi .tahun {
             position: absolute;
             top: 10px;
@@ -359,8 +473,17 @@
             gap: 30px;
             font-size: 11px;
         }
-        .ttd-box { width: 40%; text-align: center; }
-        .ttd-box .jabatan { font-weight: 700; color: var(--slate-700); }
+
+        .ttd-box {
+            width: 40%;
+            text-align: center;
+        }
+
+        .ttd-box .jabatan {
+            font-weight: 700;
+            color: var(--slate-700);
+        }
+
         .ttd-box .garis {
             margin-top: 56px;
             padding-top: 4px;
@@ -383,6 +506,7 @@
             text-align: center;
             margin-top: 24px;
         }
+
         .btn {
             display: inline-block;
             padding: 9px 18px;
@@ -392,12 +516,25 @@
             font-weight: 700;
             cursor: pointer;
             color: #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
         }
-        .btn-gelap { background: var(--slate-900); }
-        .btn-gelap:hover { background: #1e293b; }
-        .btn-hijau { background: var(--green); margin-left: 8px; }
-        .btn-hijau:hover { background: #047857; }
+
+        .btn-gelap {
+            background: var(--slate-900);
+        }
+
+        .btn-gelap:hover {
+            background: #1e293b;
+        }
+
+        .btn-hijau {
+            background: var(--green);
+            margin-left: 8px;
+        }
+
+        .btn-hijau:hover {
+            background: #047857;
+        }
 
         /* ===== Pengaturan Cetak ===== */
         @page {
@@ -406,7 +543,10 @@
         }
 
         @media print {
-            body { background: #fff; }
+            body {
+                background: #fff;
+            }
+
             .a4-paper {
                 width: 100%;
                 min-height: auto;
@@ -414,12 +554,25 @@
                 padding: 0;
                 box-shadow: none;
             }
-            .no-print { display: none !important; }
-            .blok, .prestasi, .ringkasan, tr { page-break-inside: avoid; }
-            .ttd { margin-top: 30px; }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .blok,
+            .prestasi,
+            .ringkasan,
+            tr {
+                page-break-inside: avoid;
+            }
+
+            .ttd {
+                margin-top: 30px;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <!-- Kontrol (hanya tampil di layar) -->
@@ -432,29 +585,37 @@
 
         <!-- KOP SURAT -->
         <header class="kop">
-            <div class="kop-logo">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo Super Seed Academy">
-            </div>
-            <div class="kop-text">
-                <h1>SUPER SEED ACADEMY</h1>
-                <p class="sub">Pusat Pembinaan Futsal Usia Dini &amp; Muda</p>
-                <div class="alamat">
-                    <div>Basecamp: Lapangan Futsal Mojokerto, Jawa Timur</div>
-                    <div>WhatsApp: 0888-8061-522 &nbsp;|&nbsp; Instagram: @super_seed_academy</div>
-                </div>
-            </div>
-            <div class="kop-spacer"></div>
-        </header>
+    <!-- Logo Kiri -->
+    <div class="kop-logo logo-kiri">
+        <img src="{{ asset('images/logo.png') }}" alt="Logo Super Seed Academy">
+    </div>
 
-        <div class="judul-dokumen">
-            <h2>Curriculum Vitae Atlet</h2>
+    <!-- Teks Tengah -->
+    <div class="kop-text">
+        <h1>SUPER SEED ACADEMY</h1>
+        <p class="sub">Sekretariat: Perum Puri Lestari Blok E RT.003 RW.016</p>
+        <div class="alamat">
+            <div>Desa Sukajaya, Kec. Cibitung, Kab. Bekasi, Jawa Barat - 17520</div>
+            <div>IG: @Super_seed_Academy | Tik Tok: @Super_Seed_Academy | website: https://superseedacademy.id/</div>
         </div>
+    </div>
+
+    <!-- Logo Kanan (AAFI) -->
+    <div class="kop-logo logo-kanan">
+        <img src="{{ asset('images/logo aafi.png') }}" alt="Logo AAFI" onerror="this.style.display='none'">
+    </div>
+</header>
+
+<div class="judul-dokumen">
+    <h2>Curriculum Vitae Atlet</h2>
+</div>
 
         <!-- PROFIL -->
         <section class="profil">
             <div class="foto">
-                @if($biography->foto_profil)
-                    <img src="{{ asset('storage/' . $biography->foto_profil) }}" alt="Foto {{ $biography->nama_atlet }}">
+                @if ($biography->foto_profil)
+                    <img src="{{ asset('storage/' . $biography->foto_profil) }}"
+                        alt="Foto {{ $biography->nama_atlet }}">
                 @else
                     <span class="inisial">{{ $inisial }}</span>
                 @endif
@@ -464,14 +625,16 @@
                 <h3>{{ $biography->nama_atlet ?? 'Nama Atlet' }}</h3>
                 <div class="meta">
                     Kelas {{ $biography->kategori_kelas ?? '-' }} &nbsp;•&nbsp; NIS {{ $biography->nis ?? '-' }}
-                    @if($biography->no_punggung)
+                    @if ($biography->no_punggung)
                         &nbsp;•&nbsp; No. {{ $biography->no_punggung }}
                     @endif
                 </div>
                 <div class="chips">
                     <div class="chip"><span>Posisi:</span> {{ $biography->posisi_bermain ?? '-' }}</div>
-                    <div class="chip"><span>Tinggi:</span> {{ $biography->tinggi ? $biography->tinggi . ' cm' : '-' }}</div>
-                    <div class="chip"><span>Berat:</span> {{ $biography->berat ? $biography->berat . ' kg' : '-' }}</div>
+                    <div class="chip"><span>Tinggi:</span>
+                        {{ $biography->tinggi ? $biography->tinggi . ' cm' : '-' }}</div>
+                    <div class="chip"><span>Berat:</span> {{ $biography->berat ? $biography->berat . ' kg' : '-' }}
+                    </div>
                 </div>
             </div>
         </section>
@@ -518,7 +681,7 @@
                         <tr>
                             <td>Masa Latihan</td>
                             <td>
-                                @if($lama)
+                                @if ($lama)
                                     {{ $lama->y > 0 ? $lama->y . ' tahun ' : '' }}{{ $lama->m }} bulan
                                 @else
                                     -
@@ -552,7 +715,7 @@
                 <div class="blok">
                     <h3 class="judul-seksi">Statistik Pertandingan</h3>
 
-                    @if($stats->count() > 0)
+                    @if ($stats->count() > 0)
                         <table class="tabel-stat">
                             <thead>
                                 <tr>
@@ -563,16 +726,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($stats as $stat)
-                                <tr>
-                                    <td class="lawan">
-                                        <strong>{{ $stat->nama_lawan }}</strong>
-                                        <small>{{ \Carbon\Carbon::parse($stat->tanggal)->translatedFormat('d M Y') }}</small>
-                                    </td>
-                                    <td>{{ $stat->menit_bermain }}'</td>
-                                    <td class="gol">{{ $stat->gol }}</td>
-                                    <td>{{ $stat->assist }}</td>
-                                </tr>
+                                @foreach ($stats as $stat)
+                                    <tr>
+                                        <td class="lawan">
+                                            <strong>{{ $stat->nama_lawan }}</strong>
+                                            <small>{{ \Carbon\Carbon::parse($stat->tanggal)->translatedFormat('d M Y') }}</small>
+                                        </td>
+                                        <td>{{ $stat->menit_bermain }}'</td>
+                                        <td class="gol">{{ $stat->gol }}</td>
+                                        <td>{{ $stat->assist }}</td>
+                                    </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
@@ -592,20 +755,21 @@
                 <div class="blok">
                     <h3 class="judul-seksi">Riwayat Prestasi</h3>
 
-                    @if($achievements->count() > 0)
+                    @if ($achievements->count() > 0)
                         <div class="prestasi-list">
-                            @foreach($achievements as $prestasi)
-                            <div class="prestasi">
-                                <span class="tahun">{{ \Carbon\Carbon::parse($prestasi->tanggal)->format('Y') }}</span>
-                                <h4>{{ $prestasi->nama_turnamen }}</h4>
-                                <div class="detail">
-                                    <b>{{ $prestasi->pencapaian }}</b>
-                                    &nbsp;|&nbsp; {{ $prestasi->kategori }}
-                                    @if($prestasi->tingkat)
-                                        &nbsp;({{ $prestasi->tingkat }})
-                                    @endif
+                            @foreach ($achievements as $prestasi)
+                                <div class="prestasi">
+                                    <span
+                                        class="tahun">{{ \Carbon\Carbon::parse($prestasi->tanggal)->format('Y') }}</span>
+                                    <h4>{{ $prestasi->nama_turnamen }}</h4>
+                                    <div class="detail">
+                                        <b>{{ $prestasi->pencapaian }}</b>
+                                        &nbsp;|&nbsp; {{ $prestasi->kategori }}
+                                        @if ($prestasi->tingkat)
+                                            &nbsp;({{ $prestasi->tingkat }})
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
                     @else
@@ -622,24 +786,25 @@
                 <div class="garis">( ............................... )</div>
             </div>
             <div class="ttd-box">
-                <div class="jabatan">Mojokerto, {{ now()->translatedFormat('d F Y') }}</div>
-                <div class="jabatan">Pelatih Kepala</div>
+                <div class="jabatan">Kab. Bekasi, {{ now()->translatedFormat('d F Y') }}</div>
+                <div class="jabatan">Technical Director</div>
                 <div class="garis">( ............................... )</div>
             </div>
         </section>
 
         <footer class="footer-cetak">
-            <span>Dokumen ini dicetak dari sistem Super Seed Academy</span>
+            <span>Dokumen ini di terbitkan dari website: superseedacademy.id</span>
             <span>Dicetak: {{ now()->translatedFormat('d M Y H:i') }}</span>
         </footer>
     </div>
 
     <script>
-        window.addEventListener('load', function () {
-            setTimeout(function () {
+        window.addEventListener('load', function() {
+            setTimeout(function() {
                 window.print();
             }, 800);
         });
     </script>
 </body>
+
 </html>
