@@ -84,6 +84,9 @@
                         @if($item->keterangan)
                             <br><small class="text-muted">{{ $item->keterangan }}</small>
                         @endif
+                        @if($item->metode_pembayaran)
+                            <br><small class="text-secondary">Metode: {{ $item->metode_pembayaran == 'cash' ? 'Cash (Tunai)' : 'Transfer' }}{{ $item->nama_pengirim_transfer ? ' (a.n. '.$item->nama_pengirim_transfer.')' : '' }}</small>
+                        @endif
                     </td>
                     <td class="text-center">
                         @if($item->jenis == 'pemasukan')

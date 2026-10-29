@@ -241,18 +241,112 @@
                         </div>
                     @endif
 
-                    {{-- 3.C. CATATAN & REKOMENDASI PELATIH --}}
-                    @if($rf->catatan_pelatih)
-                        <div class="p-3 bg-light rounded-3 border-start border-4 border-success">
-                            <div class="small fw-bold text-dark mb-1 d-flex align-items-center gap-1.5">
-                                <i class="bi bi-chat-quote-fill text-success fs-5"></i>
-                                <span>Catatan & Evaluasi Perkembangan dari Tim Pelatih:</span>
+                    @php
+                        $observasiWali = [];
+                        if (!empty($rf->observasi_kualitatif)) {
+                            $observasiWali = is_string($rf->observasi_kualitatif) 
+                                ? json_decode($rf->observasi_kualitatif, true) 
+                                : $rf->observasi_kualitatif;
+                        }
+                    @endphp
+
+                    {{-- 3.C. BAGIAN E: OBSERVASI LAPANGAN (KUALITATIF) --}}
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-brand-navy mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-eye-fill text-brand-green"></i>
+                            <span>E. Observasi Lapangan (Kualitatif)</span>
+                        </h6>
+                        <div class="card border rounded-3 overflow-hidden bg-white shadow-none">
+                            <div class="px-3 py-2 bg-light border-bottom text-muted small" style="font-size: 0.75rem;">
+                                Catat hasil pengamatan selama latihan atau pertandingan, termasuk situasi bola mati.
                             </div>
-                            <p class="small text-secondary mb-0 fst-italic ps-4 lh-base">
-                                "{{ $rf->catatan_pelatih }}"
-                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0 align-middle" style="font-size: 0.85rem;">
+                                    <tbody>
+                                        <tr>
+                                            <td class="bg-light fw-bold text-secondary" style="width: 32%;">
+                                                <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Kekuatan Utama (Strengths)
+                                            </td>
+                                            <td class="fw-semibold text-dark">
+                                                {{ !empty($observasiWali['kekuatan_utama']) ? $observasiWali['kekuatan_utama'] : '-' }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="bg-light fw-bold text-secondary">
+                                                <i class="bi bi-arrow-up-right-circle-fill text-primary me-1"></i> Area yang Perlu Ditingkatkan (Weaknesses)
+                                            </td>
+                                            <td class="fw-semibold text-dark">
+                                                {{ !empty($observasiWali['area_peningkatan']) ? $observasiWali['area_peningkatan'] : '-' }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="bg-light fw-bold text-secondary">
+                                                <i class="bi bi-shield-check text-success me-1"></i> Catatan Perilaku / Sikap di Lapangan
+                                            </td>
+                                            <td class="fw-semibold text-dark">
+                                                {{ !empty($observasiWali['catatan_perilaku']) ? $observasiWali['catatan_perilaku'] : '-' }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="bg-light fw-bold text-secondary">
+                                                <i class="bi bi-flag-fill text-danger me-1"></i> Fokus Latihan / Tindak Lanjut
+                                            </td>
+                                            <td class="fw-semibold text-dark">
+                                                {{ !empty($observasiWali['fokus_latihan']) ? $observasiWali['fokus_latihan'] : '-' }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    @endif
+                    </div>
+
+                    {{-- 3.D. BAGIAN F: REKAP HASIL PENILAIAN --}}
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-brand-navy mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-award-fill text-brand-green"></i>
+                            <span>F. Rekap Hasil Penilaian</span>
+                        </h6>
+                        <div class="card border rounded-3 p-3 bg-light shadow-none">
+                            <div class="row g-3 align-items-center mb-3">
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-white border rounded-3 text-center">
+                                        <span class="small text-muted fw-bold text-uppercase d-block mb-1">Total Skor Akumulasi</span>
+                                        <div class="fs-3 fw-bold text-primary">
+                                            {{ $rf->rekap_skor_100 ?? 0 }} <span class="fs-6 text-muted fw-normal">/ 100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-white border rounded-3 text-center">
+                                        <span class="small text-muted fw-bold text-uppercase d-block mb-1">Rata-rata Nilai Aspek</span>
+                                        <div class="fs-3 fw-bold text-success">
+                                            {{ $rf->rekap_rata_rata ?? 0 }} <span class="fs-6 text-muted fw-normal">/ 5</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if($rf->catatan_pelatih)
+                                <div class="p-3 bg-white rounded-3 border-start border-4 border-success">
+                                    <div class="small fw-bold text-dark mb-1 d-flex align-items-center gap-1.5">
+                                        <i class="bi bi-chat-quote-fill text-success fs-5"></i>
+                                        <span>Kesimpulan / Rekomendasi Asesor &amp; Tim Pelatih:</span>
+                                    </div>
+                                    <p class="small text-secondary mb-0 fst-italic ps-4 lh-base">
+                                        "{{ $rf->catatan_pelatih }}"
+                                    </p>
+                                </div>
+                            @endif
+
+                            <div class="d-flex justify-content-end mt-3">
+                                <a href="{{ route('admin.reports.print', $rf->id) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm">
+                                    <i class="bi bi-printer"></i>
+                                    <span>Cetak Raport Resmi (PDF)</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             @empty

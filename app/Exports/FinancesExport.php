@@ -13,19 +13,65 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class FinancesExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
     private int $rowNumber = 0;
-    private ?string $bulan;
+    private array $filters = [];
 
-    public function __construct(?string $bulan = null)
+    public function __construct($filters = null)
     {
-        $this->bulan = $bulan;
+        if (is_string($filters)) {
+            $this->filters = ['bulan' => $filters];
+        } elseif (is_array($filters)) {
+            $this->filters = $filters;
+        }
     }
 
     public function collection()
     {
         $query = Finance::query()->with('athlete');
         
-        if ($this->bulan) {
-            $query->where('bulan_tagihan', $this->bulan);
+        $bulan = $this->filters['bulan'] ?? null;
+        if ($bulan && $bulan !== 'semua') {
+            $indonesianMonths = [
+                'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+                'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+                'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+            ];
+            $parts = explode(' ', trim($bulan));
+            if (count($parts) >= 2 && isset($indonesianMonths[$parts[0]])) {
+                $m = sprintf('%02d', $indonesianMonths[$parts[0]]);
+                $y = $parts[1];
+                $startDate = "{$y}-{$m}-01";
+                $endDate = \Carbon\Carbon::parse($startDate)->endOfMonth()->toDateString();
+
+                $query->where(function($q) use ($bulan, $startDate, $endDate) {
+                    $q->where('bulan_tagihan', $bulan)
+                      ->orWhereBetween('tanggal', [$startDate, $endDate]);
+                });
+            } else {
+                $query->where('bulan_tagihan', $bulan);
+            }
+        }
+
+        if (!empty($this->filters['search'])) {
+            $search = $this->filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('kategori', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%")
+                  ->orWhereHas('athlete', function($q2) use ($search) {
+                      $q2->where('nama', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if (!empty($this->filters['jenis'])) {
+            $query->where('jenis', $this->filters['jenis']);
+        }
+
+        if (!empty($this->filters['status'])) {
+            $query->where('status_bayar', $this->filters['status']);
+        }
+
+        if (!empty($this->filters['metode'])) {
+            $query->where('metode_pembayaran', $this->filters['metode']);
         }
 
         return $query->orderBy('tanggal', 'asc')->orderBy('id', 'asc')->get();
@@ -37,6 +83,7 @@ class FinancesExport implements FromCollection, WithHeadings, WithMapping, Shoul
             'No.',
             'Tanggal',
             'Jenis Arus',
+            'Metode Pembayaran',
             'Kategori & Keterangan',
             'Nama Siswa (Jika Ada)',
             'Status Bayar',
@@ -53,10 +100,18 @@ class FinancesExport implements FromCollection, WithHeadings, WithMapping, Shoul
         $keterangan = $finance->kategori . ($finance->keterangan ? ' - ' . $finance->keterangan : '');
         $namaSiswa = $finance->athlete ? $finance->athlete->nama : '-';
 
+        $metode = '-';
+        if ($finance->metode_pembayaran === 'cash') {
+            $metode = 'Cash (Tunai)';
+        } elseif ($finance->metode_pembayaran === 'transfer') {
+            $metode = 'Transfer Bank' . ($finance->nama_pengirim_transfer ? ' (a.n. ' . $finance->nama_pengirim_transfer . ')' : '');
+        }
+
         return [
             $this->rowNumber,
             \Carbon\Carbon::parse($finance->tanggal)->format('d/m/Y'),
             $finance->jenis == 'pemasukan' ? 'Pemasukan' : 'Pengeluaran',
+            $this->sanitizeFormula($metode),
             $this->sanitizeFormula($keterangan),
             $this->sanitizeFormula($namaSiswa),
             $finance->status_bayar == 'lunas' ? 'Lunas' : 'Belum Lunas',

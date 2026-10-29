@@ -28,6 +28,12 @@ class AssessorScore extends Model
         return $this->belongsTo(User::class, 'assessor_id');
     }
 
+    // Relasi ke tabel Observasi Lapangan
+    public function observation()
+    {
+        return $this->hasOne(AssessmentObservation::class, 'assessor_score_id');
+    }
+
     /**
      * Helper untuk mengambil nilai kategori tertentu (support dynamic scores & legacy columns)
      */

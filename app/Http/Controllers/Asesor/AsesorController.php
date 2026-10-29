@@ -7,6 +7,7 @@ use App\Models\Athlete;
 use App\Models\AssessorScore;
 use App\Models\AssessmentCategory;
 use App\Models\AssessmentPeriod;
+use App\Models\AssessmentObservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -47,19 +48,36 @@ class AsesorController extends Controller
         $activePeriodName = AssessmentPeriod::getActivePeriodName();
         $periodeSekarang = $request->get('periode', $activePeriodName);
 
-        // Ambil semua kategori penilaian yang sedang aktif
+        // 1. DETEKSI POSISI BERMAIN (KIPER / PLAYER)
+        // (Catatan: Jika kolom posisi_bermain ada di tabel relasi biografi, 
+        // ubah menjadi: $athlete->biography->posisi_bermain ?? '')
+        $posisiBermain = $athlete->posisi_bermain ?? ''; 
+        $isKiper = stripos($posisiBermain, 'Kiper') !== false || stripos($posisiBermain, 'GK') !== false;
+        
+        $targetPosisi = $isKiper ? 'Kiper' : 'Player';
+
+        // 2. AMBIL KATEGORI PENILAIAN (Difilter berdasarkan Is_Active dan Target Posisi)
         $categories = AssessmentCategory::where('is_active', true)
+                                        ->where('target_posisi', $targetPosisi) // <-- Filter Posisi Ditambahkan
                                         ->orderBy('urutan', 'asc')
                                         ->orderBy('id', 'asc')
                                         ->get();
 
         // Cek jika asesor sudah pernah menilai atlet ini di periode yang sama
-        $nilaiSebelumnya = AssessorScore::where('athlete_id', $athlete->id)
+        $nilaiSebelumnya = AssessorScore::with('observation')
+                                        ->where('athlete_id', $athlete->id)
                                         ->where('assessor_id', auth()->id())
                                         ->where('periode_bulan', $periodeSekarang)
                                         ->first();
 
-        return view('asesor.penilaian.create', compact('athlete', 'periodeSekarang', 'categories', 'nilaiSebelumnya'));
+        // 3. KIRIM $targetPosisi KE VIEW UNTUK MENGHIDUPKAN INDIKATOR MERAH
+        return view('asesor.penilaian.create', compact(
+            'athlete', 
+            'periodeSekarang', 
+            'categories', 
+            'nilaiSebelumnya', 
+            'targetPosisi' // <-- Variabel baru ditambahkan ke compact
+        ));
     }
 
     /**
@@ -163,7 +181,7 @@ class AsesorController extends Controller
             ? mb_substr(strip_tags(trim($request->catatan_asesor)), 0, 2000)
             : null;
 
-        AssessorScore::updateOrCreate(
+        $assessorScore = AssessorScore::updateOrCreate(
             [
                 'athlete_id'    => $athlete->id,
                 'assessor_id'   => auth()->id(),
@@ -174,6 +192,19 @@ class AsesorController extends Controller
                 'catatan_asesor' => $catatanBersih,
             ])
         );
+
+        // Simpan / Perbarui Observasi Lapangan (Kualitatif)
+        if ($request->has('observasi')) {
+            AssessmentObservation::updateOrCreate(
+                ['assessor_score_id' => $assessorScore->id],
+                [
+                    'kekuatan_utama'    => $request->input('observasi.kekuatan_utama') ? strip_tags(trim($request->input('observasi.kekuatan_utama'))) : null,
+                    'area_ditingkatkan' => $request->input('observasi.area_ditingkatkan') ? strip_tags(trim($request->input('observasi.area_ditingkatkan'))) : null,
+                    'catatan_perilaku'  => $request->input('observasi.catatan_perilaku') ? strip_tags(trim($request->input('observasi.catatan_perilaku'))) : null,
+                    'fokus_latihan'     => $request->input('observasi.fokus_latihan') ? strip_tags(trim($request->input('observasi.fokus_latihan'))) : null,
+                ]
+            );
+        }
 
         return redirect()->route('asesor.penilaian.index', ['periode' => $request->periode_bulan])
                          ->with('success', "Penilaian untuk {$athlete->nama} ({$request->periode_bulan}) berhasil disimpan!");

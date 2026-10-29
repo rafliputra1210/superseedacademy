@@ -132,6 +132,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/reports/periods/{period}', [ReportController::class, 'destroyPeriod'])
         ->middleware('throttle:10,1')
         ->name('reports.periods.destroy');
+    Route::get('/reports/{id}/print', [ReportController::class, 'print'])->name('reports.print');
     Route::resource('/reports', ReportController::class);
     Route::get('/reports/rekap-asesor', [ReportController::class, 'rekapAsesor'])->name('reports.rekap');
     Route::post('/reports/generate-final/{athlete}', [ReportController::class, 'generateFinalRaport'])
@@ -183,7 +184,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::post('biography/{id}/achievement', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeAchievement'])->name('biography.achievement.store');
         Route::post('biography/{id}/statistic', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeStatistic'])->name('biography.statistic.store');
         Route::get('biography/{id}/print', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'print'])->name('biography.print');
-});
+    });
 
 // =============================================================================
 // RUTE PORTAL WALI MURID — dilindungi auth + role

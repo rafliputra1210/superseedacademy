@@ -200,14 +200,32 @@ class ReportController extends Controller
     {
         $periode = $request->periode_bulan; // "Oktober 2026"
 
-        // 1. Ambil semua nilai dari para asesor untuk anak ini di bulan ini
-        $scores = AssessorScore::where('athlete_id', $athlete->id)
+        // 1. Ambil semua nilai dari para asesor untuk anak ini di bulan ini beserta observasi
+        $scores = AssessorScore::with('observation')
+                               ->where('athlete_id', $athlete->id)
                                ->where('periode_bulan', $periode)
                                ->get();
 
         // Validasi: Pastikan minimal ada penilaian masuk
         if ($scores->count() < 1) {
             return back()->with('error', 'Belum ada asesor yang memberikan nilai!');
+        }
+
+        // Kumpulkan observasi kualitatif dari semua asesor
+        $observasiGabungan = [
+            'kekuatan_utama'   => [],
+            'area_peningkatan' => [],
+            'catatan_perilaku' => [],
+            'fokus_latihan'    => [],
+        ];
+
+        foreach ($scores as $s) {
+            if ($s->observation) {
+                if (!empty($s->observation->kekuatan_utama))   $observasiGabungan['kekuatan_utama'][]   = trim($s->observation->kekuatan_utama);
+                if (!empty($s->observation->area_ditingkatkan)) $observasiGabungan['area_peningkatan'][] = trim($s->observation->area_ditingkatkan);
+                if (!empty($s->observation->catatan_perilaku))  $observasiGabungan['catatan_perilaku'][] = trim($s->observation->catatan_perilaku);
+                if (!empty($s->observation->fokus_latihan))     $observasiGabungan['fokus_latihan'][]    = trim($s->observation->fokus_latihan);
+            }
         }
 
         // 2. Hitung Rata-rata Otomatis per Kategori Aktif
@@ -219,6 +237,10 @@ class ReportController extends Controller
             'nilai_fisik_final'  => 0,
             'nilai_mental_final' => 0,
         ];
+
+        $grandTotalSkor = 0;
+        $totalPertanyaanSemuaKategori = 0;
+
 
         foreach ($categories as $cat) {
             $catScores = [];
@@ -243,6 +265,10 @@ class ReportController extends Controller
                     }
                     if (isset($subItem['skor']) && is_numeric($subItem['skor'])) {
                         $subPointsMap[$aspek]['scores'][] = (float)$subItem['skor'];
+                        
+                        // TAMBAHAN UNTUK REKAP: Menjumlahkan setiap nilai mentah
+                        $grandTotalSkor += (float)$subItem['skor'];
+                        $totalPertanyaanSemuaKategori++;
                     }
                     if (!empty($subItem['catatan'])) {
                         $subPointsMap[$aspek]['notes'][] = trim($subItem['catatan']);
@@ -252,7 +278,7 @@ class ReportController extends Controller
 
             $avg = count($catScores) > 0 ? round(array_sum($catScores) / count($catScores), 2) : 0;
 
-            // Susun rekap sub-poin
+            // ... (Kode penyusunan $aggregatedSubPoints dari aslinya tetap sama) ...
             $aggregatedSubPoints = [];
             $definedSubs = $cat->sub_points_list;
 
@@ -305,6 +331,24 @@ class ReportController extends Controller
 
         // Gabungkan semua catatan asesor menjadi satu paragraf
         $catatanGabungan = $scores->pluck('catatan_asesor')->filter()->implode(' | ');
+        
+        // Gabungkan observasi kualitatif
+        $observasiFinal = [
+            'kekuatan_utama' => implode(' | ', array_unique($observasiGabungan['kekuatan_utama'])),
+            'area_peningkatan' => implode(' | ', array_unique($observasiGabungan['area_peningkatan'])),
+            'catatan_perilaku' => implode(' | ', array_unique($observasiGabungan['catatan_perilaku'])),
+            'fokus_latihan' => implode(' | ', array_unique($observasiGabungan['fokus_latihan'])),
+        ];
+
+        // KALKULASI FINAL UNTUK CETAKAN (Skala 100 dan Skala 5)
+        if ($totalPertanyaanSemuaKategori > 0) {
+            $grandRataRata = round($grandTotalSkor / $totalPertanyaanSemuaKategori, 2);
+            $skorSkala100  = round(($grandTotalSkor / ($totalPertanyaanSemuaKategori * 5)) * 100);
+        } else {
+            $catVals = array_filter(array_column($scoresSummary, 'nilai'));
+            $grandRataRata = count($catVals) > 0 ? round(array_sum($catVals) / count($catVals), 2) : 0;
+            $skorSkala100  = round(($grandRataRata / 5) * 100);
+        }
 
         // 3. Simpan ke Tabel Raport Final Utama
         Raport::updateOrCreate(
@@ -313,12 +357,153 @@ class ReportController extends Controller
                 'periode'    => $periode,
             ],
             array_merge($legacy, [
-                'scores_summary' => $scoresSummary,
-                'catatan_pelatih' => $catatanGabungan,
-                'status_publish' => 'Published' // Langsung bisa dilihat wali murid
+                'scores_summary'       => $scoresSummary,
+                'catatan_pelatih'      => $catatanGabungan,
+                'rekap_skor_100'       => $skorSkala100, 
+                'rekap_rata_rata'      => $grandRataRata,
+                'observasi_kualitatif' => $observasiFinal,
+                'status_publish'       => 'Published',
             ])
         );
 
         return back()->with('success', "Raport Final berhasil di-generate dari " . $scores->count() . " asesor!");
+    }
+    public function print($id)
+    {
+        // Ambil data raport tunggal berdasarkan ID, beserta data atletnya
+        $raport = Raport::with('athlete')->findOrFail($id);
+        
+        // Pastikan kalkulasi rekap dan observasi terisi (auto-fix jika sebelumnya 0 / belum sync)
+        $this->ensureRaportRekapData($raport);
+
+        // Buka halaman khusus cetak PDF
+        return view('admin.reports.print', compact('raport'));
+    }
+
+    /**
+     * Halaman Rekapitulasi Penilaian Asesor & Raport Bawah
+     */
+    public function rekapAsesor(Request $request)
+    {
+        Carbon::setLocale('id');
+
+        $activePeriod = AssessmentPeriod::getActivePeriod();
+        $periodeAktifName = AssessmentPeriod::getActivePeriodName();
+        $periodeSekarang = $request->get('periode', $periodeAktifName);
+
+        $athletes = Athlete::orderBy('kelompok_umur', 'asc')->orderBy('nama', 'asc')->get();
+        $assessors = User::where('role', 'asesor')->get();
+        $allScores = AssessorScore::where('periode_bulan', $periodeSekarang)->get();
+        
+        // Ambil semua raport final pada periode ini
+        $raports = Raport::with('athlete')
+            ->where('periode', $periodeSekarang)
+            ->get();
+
+        // Pastikan data rekap terhitung & observasi terisi
+        foreach ($raports as $rap) {
+            $this->ensureRaportRekapData($rap);
+        }
+
+        return view('admin.reports.rekap', compact(
+            'athletes', 'assessors', 'allScores', 'periodeSekarang', 'raports'
+        ));
+    }
+
+    /**
+     * Memastikan data rekap_skor_100, rekap_rata_rata, dan observasi_kualitatif terisi
+     */
+    private function ensureRaportRekapData(Raport $raport)
+    {
+        $updated = false;
+
+        // 1. Cek Rekap Nilai: jika masih 0 atau null, kalkulasikan dari scores_summary
+        if (empty($raport->rekap_skor_100) || (float)$raport->rekap_skor_100 <= 0 || empty($raport->rekap_rata_rata) || (float)$raport->rekap_rata_rata <= 0) {
+            $totalSkor = 0;
+            $totalCount = 0;
+
+            if (!empty($raport->scores_summary) && is_array($raport->scores_summary)) {
+                foreach ($raport->scores_summary as $cat) {
+                    if (!empty($cat['sub_points']) && is_array($cat['sub_points'])) {
+                        foreach ($cat['sub_points'] as $sp) {
+                            if (isset($sp['skor']) && is_numeric($sp['skor']) && (float)$sp['skor'] > 0) {
+                                $totalSkor += (float)$sp['skor'];
+                                $totalCount++;
+                            }
+                        }
+                    } elseif (!empty($cat['nilai']) && (float)$cat['nilai'] > 0) {
+                        $totalSkor += (float)$cat['nilai'];
+                        $totalCount++;
+                    }
+                }
+            }
+
+            if ($totalCount > 0) {
+                $raport->rekap_rata_rata = round($totalSkor / $totalCount, 2);
+                $raport->rekap_skor_100  = round(($raport->rekap_rata_rata / 5) * 100);
+                $updated = true;
+            }
+        }
+
+        // 2. Cek Observasi Kualitatif
+        $observasi = $raport->observasi_kualitatif;
+        if (is_string($observasi)) {
+            $observasi = json_decode($observasi, true);
+        }
+        $isEmptyObservasi = empty($observasi) || (
+            empty($observasi['kekuatan_utama']) && 
+            empty($observasi['area_peningkatan']) && 
+            empty($observasi['catatan_perilaku']) && 
+            empty($observasi['fokus_latihan'])
+        );
+
+        if ($isEmptyObservasi) {
+            // Ambil dari AssessorScore jika ada
+            $scores = AssessorScore::with('observation')
+                        ->where('athlete_id', $raport->athlete_id)
+                        ->where('periode_bulan', $raport->periode)
+                        ->get();
+
+            $obsGabung = [
+                'kekuatan_utama'   => [],
+                'area_peningkatan' => [],
+                'catatan_perilaku' => [],
+                'fokus_latihan'    => [],
+            ];
+            $catatanAsesor = [];
+
+            foreach ($scores as $s) {
+                if ($s->observation) {
+                    if (!empty($s->observation->kekuatan_utama))    $obsGabung['kekuatan_utama'][]   = trim($s->observation->kekuatan_utama);
+                    if (!empty($s->observation->area_ditingkatkan)) $obsGabung['area_peningkatan'][] = trim($s->observation->area_ditingkatkan);
+                    if (!empty($s->observation->catatan_perilaku))  $obsGabung['catatan_perilaku'][] = trim($s->observation->catatan_perilaku);
+                    if (!empty($s->observation->fokus_latihan))     $obsGabung['fokus_latihan'][]    = trim($s->observation->fokus_latihan);
+                }
+                if (!empty($s->catatan_asesor)) {
+                    $catatanAsesor[] = trim($s->catatan_asesor);
+                }
+            }
+
+            $obsFinal = [
+                'kekuatan_utama'   => implode(' | ', array_unique($obsGabung['kekuatan_utama'])),
+                'area_peningkatan' => implode(' | ', array_unique($obsGabung['area_peningkatan'])),
+                'catatan_perilaku' => implode(' | ', array_unique($obsGabung['catatan_perilaku'])),
+                'fokus_latihan'    => implode(' | ', array_unique($obsGabung['fokus_latihan'])),
+            ];
+
+            if (!empty($obsFinal['kekuatan_utama']) || !empty($obsFinal['area_peningkatan']) || !empty($obsFinal['catatan_perilaku']) || !empty($obsFinal['fokus_latihan'])) {
+                $raport->observasi_kualitatif = $obsFinal;
+                $updated = true;
+            }
+
+            if (empty($raport->catatan_pelatih) && count($catatanAsesor) > 0) {
+                $raport->catatan_pelatih = implode(' | ', array_unique($catatanAsesor));
+                $updated = true;
+            }
+        }
+
+        if ($updated) {
+            $raport->save();
+        }
     }
 }

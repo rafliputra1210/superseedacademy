@@ -211,7 +211,19 @@
                                                 <i class="bi bi-eye"></i>
                                                 <span>Detail</span>
                                             </button>
+                                        @php
+                                        // Cari data raport spesifik milik atlet ini di periode sekarang
+                                        // PASTIKAN BLOK INI ADA SEBELUM @if($dataRaport)
+                                        $dataRaport = \App\Models\Raport::where('athlete_id', $atlet->id)
+                                                                        ->where('periode', $periodeSekarang)
+                                                                        ->first();
+                                            @endphp
 
+                                            @if($dataRaport)
+                                                <a href="{{ route('admin.reports.print', $dataRaport->id) }}" target="_blank" class="btn btn-sm btn-primary text-white fw-bold">
+                                                    <i class="bi bi-printer"></i> Cetak
+                                                </a>
+                                            @endif
                                             <!-- Tombol Re-generate -->
                                             <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST" class="d-inline">
                                                 @csrf
@@ -335,17 +347,93 @@
                                                             </div>
                                                         @endif
 
-                                                        @if($sudahTerbit->catatan_pelatih)
-                                                            <div class="mt-3">
-                                                                <label class="small fw-bold text-dark"><i class="bi bi-chat-quote me-1 text-primary"></i>Catatan Gabungan Asesor:</label>
-                                                                <div class="p-3 bg-light rounded-3 small text-secondary">
-                                                                    {{ $sudahTerbit->catatan_pelatih }}
-                                                                </div>
+                                                        @php
+                                                            $modalObs = $sudahTerbit->observasi_kualitatif;
+                                                            if (is_string($modalObs)) {
+                                                                $modalObs = json_decode($modalObs, true);
+                                                            }
+                                                            $mSkor100 = (float)($sudahTerbit->rekap_skor_100 ?? 0);
+                                                            $mSkorRata = (float)($sudahTerbit->rekap_rata_rata ?? 0);
+                                                            if ($mSkor100 <= 0 && !empty($sudahTerbit->scores_summary) && is_array($sudahTerbit->scores_summary)) {
+                                                                $tTot = 0; $tCnt = 0;
+                                                                foreach ($sudahTerbit->scores_summary as $c) {
+                                                                    if (!empty($c['nilai']) && (float)$c['nilai'] > 0) {
+                                                                        $tTot += (float)$c['nilai'];
+                                                                        $tCnt++;
+                                                                    }
+                                                                }
+                                                                if ($tCnt > 0) {
+                                                                    $mSkorRata = round($tTot / $tCnt, 2);
+                                                                    $mSkor100  = round(($mSkorRata / 5) * 100);
+                                                                }
+                                                            }
+                                                        @endphp
+
+                                                        {{-- BAGIAN E: OBSERVASI LAPANGAN --}}
+                                                        <div class="mt-4">
+                                                            <h6 class="small fw-bold text-uppercase text-secondary mb-2">
+                                                                <i class="bi bi-eye-fill text-primary me-1"></i>E. Observasi Lapangan (Kualitatif)
+                                                            </h6>
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm table-bordered bg-light mb-0 small">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="width: 38%; font-weight: 600;" class="text-secondary">Kekuatan Utama (Strengths)</td>
+                                                                            <td class="text-dark">{{ !empty($modalObs['kekuatan_utama']) ? $modalObs['kekuatan_utama'] : '-' }}</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="font-weight: 600;" class="text-secondary">Area yang Perlu Ditingkatkan</td>
+                                                                            <td class="text-dark">{{ !empty($modalObs['area_peningkatan']) ? $modalObs['area_peningkatan'] : '-' }}</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="font-weight: 600;" class="text-secondary">Catatan Perilaku / Sikap</td>
+                                                                            <td class="text-dark">{{ !empty($modalObs['catatan_perilaku']) ? $modalObs['catatan_perilaku'] : '-' }}</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="font-weight: 600;" class="text-secondary">Fokus Latihan / Tindak Lanjut</td>
+                                                                            <td class="text-dark">{{ !empty($modalObs['fokus_latihan']) ? $modalObs['fokus_latihan'] : '-' }}</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
                                                             </div>
-                                                        @endif
+                                                        </div>
+
+                                                        {{-- BAGIAN F: REKAP HASIL PENILAIAN --}}
+                                                        <div class="mt-3">
+                                                            <h6 class="small fw-bold text-uppercase text-secondary mb-2">
+                                                                <i class="bi bi-award-fill text-success me-1"></i>F. Rekap Hasil Penilaian
+                                                            </h6>
+                                                            <div class="p-3 bg-light rounded-3 border">
+                                                                <div class="row g-2 text-center mb-2">
+                                                                    <div class="col-6">
+                                                                        <div class="p-2 bg-white rounded border">
+                                                                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Total Skor</small>
+                                                                            <span class="fs-5 fw-bold text-primary">{{ $mSkor100 }}</span>
+                                                                            <small class="text-muted">/ 100</small>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6">
+                                                                        <div class="p-2 bg-white rounded border">
+                                                                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem;">Rata-rata</small>
+                                                                            <span class="fs-5 fw-bold text-success">{{ $mSkorRata }}</span>
+                                                                            <small class="text-muted">/ 5</small>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @if($sudahTerbit->catatan_pelatih)
+                                                                    <div class="mt-2 text-start">
+                                                                        <small class="fw-bold text-secondary d-block">Kesimpulan / Rekomendasi Asesor:</small>
+                                                                        <span class="small text-dark fst-italic">{{ $sudahTerbit->catatan_pelatih }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div class="modal-footer border-top bg-light py-2">
+                                                    <div class="modal-footer border-top bg-light py-2 d-flex justify-content-between">
                                                         <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                                        <a href="{{ route('admin.reports.print', $sudahTerbit->id) }}" target="_blank" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-printer me-1"></i> Cetak PDF
+                                                        </a>
                                                     </div>
                                                 </div>
                                             </div>

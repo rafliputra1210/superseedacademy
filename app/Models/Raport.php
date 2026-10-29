@@ -20,13 +20,17 @@ class Raport extends Model
         'nilai_fisik_final',
         'nilai_mental_final',
         'catatan_pelatih',
+        'rekap_skor_100',
+        'rekap_rata_rata',
+        'observasi_kualitatif',
         'status_publish',
         'is_archived',
     ];
 
     protected $casts = [
-        'scores_summary' => 'array',
-        'is_archived'    => 'boolean',
+        'scores_summary'       => 'array',
+        'observasi_kualitatif' => 'array',
+        'is_archived'          => 'boolean',
     ];
 
     public function athlete()

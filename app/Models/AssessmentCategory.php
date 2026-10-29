@@ -13,6 +13,7 @@ class AssessmentCategory extends Model
 
     protected $fillable = [
         'nama',
+        'target_posisi',
         'deskripsi',
         'urutan',
         'is_active',

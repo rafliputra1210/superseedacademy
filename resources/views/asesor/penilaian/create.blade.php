@@ -22,6 +22,17 @@
             </div>
         </div>
     </div>
+    <div class="d-flex gap-2 mb-4">
+    <!-- Kotak PLAYER -->
+    <div class="border border-2 border-danger rounded px-4 py-1 text-center {{ $targetPosisi == 'Player' ? 'bg-danger text-white' : 'text-danger opacity-50' }}">
+        <span class="fw-bold small">PLAYER</span>
+    </div>
+    
+    <!-- Kotak KIPER -->
+    <div class="border border-2 border-danger rounded px-4 py-1 text-center {{ $targetPosisi == 'Kiper' ? 'bg-danger text-white' : 'text-danger opacity-50' }}">
+        <span class="fw-bold small">KIPER</span>
+    </div>
+</div>
 
     <!-- Info Atlet Card -->
     <div class="card card-custom shadow-sm border-0 mb-4 p-3 bg-white">
@@ -175,13 +186,61 @@
                     @endforelse
                 </div>
 
-                <!-- Catatan Asesor -->
+                @php
+                    $prevObs = $nilaiSebelumnya->observation ?? null;
+                @endphp
+
+                <!-- E. Observasi Lapangan (Kualitatif) -->
+                <div class="card border shadow-none rounded-3 mb-4 overflow-hidden">
+                    <div class="card-header py-2.5 px-3 bg-light border-bottom">
+                        <h6 class="fw-bold text-dark mb-0 fs-6">
+                            <span class="text-primary me-1">E.</span> Observasi Lapangan (Kualitatif)
+                        </h6>
+                        <div class="text-muted small" style="font-size: 0.75rem;">
+                            Catat hasil pengamatan selama latihan atau pertandingan, termasuk situasi bola mati.
+                        </div>
+                    </div>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark mb-1">
+                                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Kekuatan Utama (Strengths)
+                                </label>
+                                <textarea name="observasi[kekuatan_utama]" class="form-control form-control-sm" rows="3" 
+                                          placeholder="Contoh: Kecepatan lari tinggi, akurasi umpan silang akurat, visi bermain bagus...">{{ old('observasi.kekuatan_utama', $prevObs->kekuatan_utama ?? '') }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark mb-1">
+                                    <i class="bi bi-arrow-up-right-circle-fill text-primary me-1"></i> Area yang Perlu Ditingkatkan (Weaknesses)
+                                </label>
+                                <textarea name="observasi[area_ditingkatkan]" class="form-control form-control-sm" rows="3" 
+                                          placeholder="Contoh: Penguasaan kaki kiri, ketahanan stamina di babak kedua...">{{ old('observasi.area_ditingkatkan', $prevObs->area_ditingkatkan ?? '') }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark mb-1">
+                                    <i class="bi bi-shield-check text-success me-1"></i> Catatan Perilaku / Sikap di Lapangan
+                                </label>
+                                <textarea name="observasi[catatan_perilaku]" class="form-control form-control-sm" rows="3" 
+                                          placeholder="Contoh: Disiplin, memiliki jiwa kepemimpinan, mampu bekerja sama...">{{ old('observasi.catatan_perilaku', $prevObs->catatan_perilaku ?? '') }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark mb-1">
+                                    <i class="bi bi-flag-fill text-danger me-1"></i> Fokus Latihan / Tindak Lanjut
+                                </label>
+                                <textarea name="observasi[fokus_latihan]" class="form-control form-control-sm" rows="3" 
+                                          placeholder="Contoh: Latihan finishing 1-on-1, latihan fisik endurance...">{{ old('observasi.fokus_latihan', $prevObs->fokus_latihan ?? '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Catatan Asesor (Kesimpulan / Rekomendasi) -->
                 <div class="mb-4">
                     <label class="form-label fw-bold text-dark">
-                        Catatan & Evaluasi Perkembangan Keseluruhan <span class="text-muted fw-normal small">(Opsional)</span>
+                        Kesimpulan / Rekomendasi Asesor <span class="text-muted fw-normal small">(Opsional)</span>
                     </label>
-                    <textarea name="catatan_asesor" class="form-control @error('catatan_asesor') is-invalid @enderror" rows="4" 
-                              placeholder="Tuliskan catatan khusus atau rekomendasi perkembangan untuk atlet ini...">{{ old('catatan_asesor', $nilaiSebelumnya->catatan_asesor ?? '') }}</textarea>
+                    <textarea name="catatan_asesor" class="form-control @error('catatan_asesor') is-invalid @enderror" rows="3" 
+                              placeholder="Tuliskan kesimpulan akhir atau rekomendasi umum perkembangan untuk atlet ini...">{{ old('catatan_asesor', $nilaiSebelumnya->catatan_asesor ?? '') }}</textarea>
                     @error('catatan_asesor')
                         <small class="text-danger mt-1 d-block">{{ $message }}</small>
                     @enderror

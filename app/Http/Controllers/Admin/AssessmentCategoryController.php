@@ -24,6 +24,7 @@ class AssessmentCategoryController extends Controller
     {
         $validated = $request->validate([
             'nama'         => 'required|string|max:100|unique:assessment_categories,nama',
+            'target_posisi' => 'required|in:Player,Kiper',
             'deskripsi'    => 'nullable|string|max:500',
             'urutan'       => 'nullable|integer|min:0',
             'is_active'    => 'nullable|boolean',
@@ -31,6 +32,7 @@ class AssessmentCategoryController extends Controller
             'sub_points.*' => 'nullable|string|max:255',
         ], [
             'nama.required' => 'Nama kategori wajib diisi.',
+            'target_posisi.required' => 'Posisi target wajib diisi.',
             'nama.unique'   => 'Kategori dengan nama ini sudah ada.',
         ]);
 
@@ -57,12 +59,14 @@ class AssessmentCategoryController extends Controller
     {
         $validated = $request->validate([
             'nama'         => 'required|string|max:100|unique:assessment_categories,nama,' . $category->id,
+            'target_posisi' => 'required|in:Player,Kiper',
             'deskripsi'    => 'nullable|string|max:500',
             'urutan'       => 'nullable|integer|min:0',
             'sub_points'   => 'nullable|array',
             'sub_points.*' => 'nullable|string|max:255',
         ], [
             'nama.required' => 'Nama kategori wajib diisi.',
+            'target_posisi.required' => 'Posisi target wajib diisi.',
             'nama.unique'   => 'Kategori dengan nama ini sudah digunakan.',
         ]);
 

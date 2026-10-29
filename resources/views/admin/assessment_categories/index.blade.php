@@ -51,6 +51,17 @@
                                 <small class="text-danger d-block mt-1">{{ $message }}</small>
                             @enderror
                         </div>
+                        <!-- Pilihan Target Posisi (PLAYER / KIPER) -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small">Target Posisi <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="target_posisi" id="posisi-player" value="Player" autocomplete="off" checked>
+                                <label class="btn btn-outline-danger w-50 fw-bold border-2" for="posisi-player">PLAYER</label>
+
+                                <input type="radio" class="btn-check" name="target_posisi" id="posisi-kiper" value="Kiper" autocomplete="off">
+                                <label class="btn btn-outline-danger w-50 fw-bold border-2" for="posisi-kiper">KIPER</label>
+                            </div>
+                        </div>
 
                         <!-- Sub Poin / Indikator Penilaian (Skor 1-5) -->
                         <div class="mb-3">

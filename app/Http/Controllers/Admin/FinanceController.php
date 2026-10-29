@@ -451,19 +451,42 @@ class FinanceController extends Controller
     public function exportExcel(Request $request)
     {
         $bulan    = $request->bulan;
-        $namaFile = 'Laporan_Keuangan_Superseed_Academy_' . ($bulan ? str_replace(' ', '_', $bulan) : 'Semua') . '_' . date('Y-m-d_H-i') . '.xlsx';
-        return Excel::download(new FinancesExport($bulan), $namaFile);
+        $namaFile = 'Laporan_Keuangan_Superseed_Academy_' . ($bulan && $bulan !== 'semua' ? str_replace(' ', '_', $bulan) : 'Semua') . '_' . date('Y-m-d_H-i') . '.xlsx';
+        return Excel::download(new FinancesExport($request->all()), $namaFile);
     }
 
     public function print(Request $request)
     {
         $query = Finance::query()->with('athlete');
 
-        if ($request->has('bulan') && $request->bulan != '') {
+        if ($request->has('bulan') && $request->bulan != '' && $request->bulan != 'semua') {
             $query->where('bulan_tagihan', $request->bulan);
         }
 
-        $filterBulanAktif = ($request->has('bulan') && $request->bulan != '') ? $request->bulan : null;
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('kategori', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%")
+                  ->orWhereHas('athlete', function($q2) use ($search) {
+                      $q2->where('nama', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->has('jenis') && $request->jenis != '') {
+            $query->where('jenis', $request->jenis);
+        }
+
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status_bayar', $request->status);
+        }
+
+        if ($request->has('metode') && $request->metode != '') {
+            $query->where('metode_pembayaran', $request->metode);
+        }
+
+        $filterBulanAktif = ($request->has('bulan') && $request->bulan != '' && $request->bulan != 'semua') ? $request->bulan : null;
         $summary = $this->calculateSummary($filterBulanAktif);
 
         $saldoAwal                = $summary['saldoAwal'];
