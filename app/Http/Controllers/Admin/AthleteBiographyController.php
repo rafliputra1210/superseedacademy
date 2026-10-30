@@ -51,9 +51,18 @@ class AthleteBiographyController extends Controller
         $data = $request->except('foto_profil');
 
         if ($request->hasFile('foto_profil')) {
-            // [CARA BENAR LARAVEL] Otomatis simpan ke storage/app/public/biography_photos
-            // Database hanya akan menyimpan string: 'biography_photos/nama_file.jpg'
-            $data['foto_profil'] = $request->file('foto_profil')->store('biography_photos', 'public');
+            $path = $request->file('foto_profil')->store('biography_photos', 'public');
+            $data['foto_profil'] = $path;
+
+            // Mirror otomatis ke public/uploads/biography_photos agar langsung terbaca di shared hosting tanpa storage:link
+            try {
+                $storageFile = storage_path('app/public/' . $path);
+                $destDir = public_path('uploads/biography_photos');
+                if (!file_exists($destDir)) {
+                    @mkdir($destDir, 0755, true);
+                }
+                @copy($storageFile, $destDir . '/' . basename($path));
+            } catch (\Throwable $e) {}
         } else {
             $athlete = Athlete::find($request->athlete_id);
             if ($athlete && !empty($athlete->foto)) {
@@ -86,10 +95,25 @@ class AthleteBiographyController extends Controller
             // Hapus file fisik foto lama agar hosting tidak penuh
             if ($biography->foto_profil) {
                 Storage::disk('public')->delete($biography->foto_profil);
+                $oldUpload = public_path('uploads/' . ltrim($biography->foto_profil, '/'));
+                if (file_exists($oldUpload)) {
+                    @unlink($oldUpload);
+                }
             }
 
             // Simpan foto baru
-            $data['foto_profil'] = $request->file('foto_profil')->store('biography_photos', 'public');
+            $path = $request->file('foto_profil')->store('biography_photos', 'public');
+            $data['foto_profil'] = $path;
+
+            // Mirror otomatis ke public/uploads/biography_photos
+            try {
+                $storageFile = storage_path('app/public/' . $path);
+                $destDir = public_path('uploads/biography_photos');
+                if (!file_exists($destDir)) {
+                    @mkdir($destDir, 0755, true);
+                }
+                @copy($storageFile, $destDir . '/' . basename($path));
+            } catch (\Throwable $e) {}
         }
 
         $biography->update($data);
@@ -102,6 +126,10 @@ class AthleteBiographyController extends Controller
         // Hapus file fisik dari storage sebelum data dihapus dari database
         if ($biography->foto_profil) {
             Storage::disk('public')->delete($biography->foto_profil);
+            $uploadFile = public_path('uploads/' . ltrim($biography->foto_profil, '/'));
+            if (file_exists($uploadFile)) {
+                @unlink($uploadFile);
+            }
         }
         
         $biography->delete();
@@ -142,7 +170,28 @@ class AthleteBiographyController extends Controller
     public function storeStatistic(Request $request, $id)
     {
         $biography = AthleteBiography::findOrFail($id);
-        $biography->statistics()->create($request->all());
+
+        $validated = $request->validate([
+            'nama_pertandingan' => 'required|string|max:255',
+            'nama_lawan'        => 'required|string|max:255',
+            'tanggal'           => 'required|date',
+            'menit_bermain'     => 'required|integer|min:0|max:200',
+            'gol'               => 'required|integer|min:0|max:50',
+            'assist'            => 'required|integer|min:0|max:50',
+            'saves'             => 'nullable|integer|min:0|max:100',
+            'clean_sheet'       => 'nullable|boolean',
+            'nilai_evaluasi'    => 'nullable|integer|min:1|max:100',
+            'catatan_coach'     => 'nullable|string|max:1000',
+        ], [
+            'nama_pertandingan.required' => 'Nama pertandingan wajib diisi.',
+            'nama_lawan.required'        => 'Nama tim lawan wajib diisi.',
+            'tanggal.required'           => 'Tanggal pertandingan wajib diisi.',
+            'menit_bermain.required'     => 'Menit bermain wajib diisi.',
+            'gol.required'               => 'Jumlah gol wajib diisi.',
+            'assist.required'            => 'Jumlah assist wajib diisi.',
+        ]);
+
+        $biography->statistics()->create($validated);
         return back()->with('success', 'Statistik pertandingan berhasil ditambahkan!');
     }
 

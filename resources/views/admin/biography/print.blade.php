@@ -617,7 +617,8 @@
                     $fotoSrc = $biography->foto_base64 ?? $biography->foto_url;
                 @endphp
                 @if ($fotoSrc)
-                    <img src="{{ $fotoSrc }}" alt="Foto {{ $biography->nama_atlet }}">
+                    <img src="{{ $fotoSrc }}" alt="Foto {{ $biography->nama_atlet }}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                    <span class="inisial" style="display: none;">{{ $inisial }}</span>
                 @else
                     <span class="inisial">{{ $inisial }}</span>
                 @endif
@@ -626,10 +627,7 @@
             <div class="profil-info">
                 <h3>{{ $biography->nama_atlet ?? 'Nama Atlet' }}</h3>
                 <div class="meta">
-                    Kelas {{ $biography->kategori_kelas ?? '-' }} &nbsp;•&nbsp; NIS {{ $biography->nis ?? '-' }}
-                    @if ($biography->no_punggung)
-                        &nbsp;•&nbsp; No. {{ $biography->no_punggung }}
-                    @endif
+                    •&nbsp; NIS {{ $biography->nis ?? '-' }}
                 </div>
                 <div class="chips">
                     <div class="chip"><span>Posisi:</span> {{ $biography->posisi_bermain ?? '-' }}</div>

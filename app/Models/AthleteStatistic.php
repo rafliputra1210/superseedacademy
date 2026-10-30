@@ -9,5 +9,17 @@ class AthleteStatistic extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'athlete_biography_id',
+        'nama_pertandingan',
+        'nama_lawan',
+        'tanggal',
+        'menit_bermain',
+        'gol',
+        'assist',
+        'saves',
+        'clean_sheet',
+        'nilai_evaluasi',
+        'catatan_coach',
+    ];
 }

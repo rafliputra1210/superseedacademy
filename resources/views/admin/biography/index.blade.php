@@ -3,14 +3,21 @@
 @section('content')
 <div class="container-fluid px-4 py-6">
     <!-- Header Bagian Atas -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h2 class="text-2xl font-bold text-gray-800 tracking-tight">Biografi Akademisi</h2>
             <p class="text-sm text-gray-500 mt-1">Kelola profil utama, kelas, dan status keaktifan atlet.</p>
         </div>
-        <a href="{{ route('admin.biography.create') }}" class="bg-brand-blue hover:bg-emerald-700 text-white font-medium py-2.5 px-5 rounded-lg inline-flex items-center gap-2 transition-colors shadow-sm">
-            <i class="bi bi-person-plus-fill"></i> Tambah Biografi
-        </a>
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <button type="button" data-bs-toggle="modal" data-bs-target="#modalImportExcel" class="btn btn-success btn-sm fw-medium shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2" style="border-radius: 8px;">
+                <i class="bi bi-file-earmark-excel-fill fs-6"></i>
+                <span>Import Excel</span>
+            </button>
+            <a href="{{ route('admin.biography.create') }}" class="btn btn-primary btn-sm fw-medium shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2 text-white" style="border-radius: 8px; background-color: var(--brand-blue); border-color: var(--brand-blue);">
+                <i class="bi bi-person-plus-fill fs-6"></i>
+                <span>Tambah Biografi</span>
+            </a>
+        </div>
     </div>
 
     <!-- Alert Sukses -->
@@ -182,35 +189,52 @@
     </div>
 </div>
 <!-- Modal Import Excel -->
-<div class="modal fade" id="modalImportExcel" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalImportExcel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <form action="{{ route('admin.biography.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">Import Data Biografi</h5>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header px-4 py-3" style="background: linear-gradient(135deg, #0A192F 0%, #1e3a5f 100%);">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-10 text-success p-2" style="width: 38px; height: 38px;">
+                            <i class="bi bi-file-earmark-excel-fill fs-5 text-success"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0 fs-6" id="modalImportExcelLabel">Import Data Biografi</h5>
+                            <p class="text-white-50 mb-0" style="font-size: 0.75rem;">Upload file Excel untuk import massal data biografi</p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-3">
-                        Silakan upload file berformat <b>.xlsx</b> atau <b>.csv</b>.<br>
-                        Pastikan file Excel Anda memiliki header (baris pertama) dengan nama kolom berikut:
-                    </p>
-                    <ul class="small mb-3">
-                        <li><b>nis_atlet</b> (Wajib diisi NIS yang valid)</li>
-                        <li><b>kategori_kelas</b> (Isi dengan 1, 2, 3, atau 4)</li>
-                        <li><b>tanggal_bergabung</b> (Format Text: YYYY-MM-DD, misal: 2026-10-30)</li>
-                        <li><b>posisi</b> (Opsional)</li>
-                    </ul>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 d-flex gap-2 p-3 mb-3" style="background-color: #eff6ff; color: #1e40af; border-radius: 10px;">
+                        <i class="bi bi-info-circle-fill fs-5 flex-shrink-0"></i>
+                        <div class="small">
+                            Format file yang didukung: <strong>.xlsx, .xls, .csv</strong> (maks. 2MB).
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border-0 p-3 mb-3" style="border-radius: 10px;">
+                        <span class="fw-bold small text-dark mb-1 d-block">Ketentuan Header Kolom Excel:</span>
+                        <ul class="small text-secondary mb-0 ps-3" style="line-height: 1.6;">
+                            <li><code>nis_atlet</code> &mdash; Nomor Induk Siswa (Wajib terdaftar)</li>
+                            <li><code>kategori_kelas</code> &mdash; Kode kelas: <b>01</b> (New Born), <b>02</b> (KU-10), <b>03</b> (KU-13), <b>04</b> (KU-16)</li>
+                            <li><code>tanggal_bergabung</code> &mdash; Format YYYY-MM-DD (contoh: <b>2026-10-30</b>)</li>
+                            <li><code>posisi</code> &mdash; Posisi bermain (Opsional)</li>
+                        </ul>
+                    </div>
                     
-                    <div class="mb-3">
-                        <label for="file_excel" class="form-label">Pilih File Excel</label>
-                        <input class="form-control" type="file" id="file_excel" name="file_excel" accept=".xlsx, .xls, .csv" required>
+                    <div class="mb-2">
+                        <label for="file_excel" class="form-label fw-semibold small text-dark">Pilih File Dokumen Excel</label>
+                        <input class="form-control" type="file" id="file_excel" name="file_excel" accept=".xlsx, .xls, .csv" required style="border-radius: 8px;">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success">Upload & Import</button>
+                <div class="modal-footer px-4 py-3 bg-light border-top">
+                    <button type="button" class="btn btn-light border px-3 py-2 fw-medium text-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Batal</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" style="border-radius: 8px;">
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                        <span>Upload & Import</span>
+                    </button>
                 </div>
             </div>
         </form>

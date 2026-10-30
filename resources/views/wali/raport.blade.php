@@ -134,8 +134,29 @@
                             <span>Ringkasan Nilai Kategori (Skala 1 – 5)</span>
                         </h6>
                         <div class="row g-3">
-                            @if(!empty($rf->scores_summary) && is_array($rf->scores_summary))
-                                @foreach($rf->scores_summary as $item)
+                            @php
+                                $posisi = $athlete->posisi_bermain ?? '';
+                                $isKiper = stripos($posisi, 'Kiper') !== false || stripos($posisi, 'GK') !== false;
+                                $displayCategories = [];
+                                if (!empty($rf->scores_summary) && is_array($rf->scores_summary)) {
+                                    foreach ($rf->scores_summary as $kId => $item) {
+                                        $cTarget = $item['target_posisi'] ?? null;
+                                        $namaLower = strtolower($item['nama'] ?? '');
+                                        $isCatKiper = str_contains($namaLower, 'kiper') || str_contains($namaLower, 'goalkeeper');
+
+                                        if ($cTarget) {
+                                            if ($isKiper && $cTarget !== 'Kiper') continue;
+                                            if (!$isKiper && $cTarget === 'Kiper') continue;
+                                        } else {
+                                            if ($isKiper && !$isCatKiper) continue;
+                                            if (!$isKiper && $isCatKiper) continue;
+                                        }
+                                        $displayCategories[$kId] = $item;
+                                    }
+                                }
+                            @endphp
+                            @if(!empty($displayCategories))
+                                @foreach($displayCategories as $item)
                                     @php $scoreVal = (float)($item['nilai'] ?? 0); @endphp
                                     <div class="col-6 col-md-3">
                                         <div class="p-3 rounded-3 bg-light border text-center h-100 shadow-none hover-elevate">
@@ -166,7 +187,7 @@
                     </div>
 
                     {{-- 3.B. TABEL RINCIAN ASPEK SUB POIN PENILAIAN (SESUAI DOKUMEN/GAMBAR) --}}
-                    @if(!empty($rf->scores_summary) && is_array($rf->scores_summary))
+                    @if(!empty($displayCategories))
                         <div class="mb-4">
                             <h6 class="fw-bold text-brand-navy mb-3 d-flex align-items-center gap-2">
                                 <i class="bi bi-card-checklist text-brand-green"></i>
@@ -174,7 +195,7 @@
                             </h6>
 
                             <div class="d-flex flex-column gap-4">
-                                @foreach($rf->scores_summary as $catIdx => $catSum)
+                                @foreach($displayCategories as $catIdx => $catSum)
                                     @php
                                         $subItems = $catSum['sub_points'] ?? [];
                                         $catScore = (float)($catSum['nilai'] ?? 0);

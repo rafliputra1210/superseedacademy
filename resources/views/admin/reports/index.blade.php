@@ -211,43 +211,50 @@
                                                 <i class="bi bi-eye"></i>
                                                 <span>Detail</span>
                                             </button>
-                                        @php
-                                        // Cari data raport spesifik milik atlet ini di periode sekarang
-                                        // PASTIKAN BLOK INI ADA SEBELUM @if($dataRaport)
-                                        $dataRaport = \App\Models\Raport::where('athlete_id', $atlet->id)
-                                                                        ->where('periode', $periodeSekarang)
-                                                                        ->first();
-                                            @endphp
 
-                                            @if($dataRaport)
-                                                <a href="{{ route('admin.reports.print', $dataRaport->id) }}" target="_blank" class="btn btn-sm btn-primary text-white fw-bold">
-                                                    <i class="bi bi-printer"></i> Cetak
-                                                </a>
-                                            @endif
+                                            <!-- Tombol Edit Raport (Memakai data yang sudah di-eager load, no N+1 query) -->
+                                            <a href="{{ route('admin.reports.edit', $sudahTerbit->id) }}" class="btn btn-sm btn-warning fw-bold text-dark">
+                                                <i class="bi bi-pencil-square"></i> Edit
+                                            </a>
                                             <!-- Tombol Re-generate -->
-                                            <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST" class="d-inline form-confirm-action"
+                                                  data-title="Perbarui Akumulasi Raport?"
+                                                  data-html="Hitung ulang akumulasi nilai raport <b>{{ $atlet->nama }}</b> dari <b>{{ $jumlahDinilai }} penilaian asesor</b> yang tersedia?"
+                                                  data-icon="question"
+                                                  data-btn-text="<i class='bi bi-arrow-repeat me-1'></i> Ya, Perbarui"
+                                                  data-btn-class="btn-primary">
                                                 @csrf
                                                 <input type="hidden" name="periode_bulan" value="{{ $periodeSekarang }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" 
-                                                        onclick="return confirm('Perbarui ulang akumulasi raport {{ $atlet->nama }} dari {{ $jumlahDinilai }} penilaian asesor?')">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" title="Perbarui ulang raport">
                                                     <i class="bi bi-arrow-repeat"></i>
                                                     <span>Update</span>
                                                 </button>
                                             </form>
 
                                             <!-- Tombol Toggle Arsip -->
-                                            <form action="{{ route('admin.reports.toggle-archive', $sudahTerbit->id) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.reports.toggle-archive', $sudahTerbit->id) }}" method="POST" class="d-inline form-confirm-action"
+                                                  @if($sudahTerbit->is_archived)
+                                                      data-title="Aktifkan Kembali Raport?"
+                                                      data-html="Raport <b>{{ $atlet->nama }}</b> akan dikembalikan ke tab <b>Raport Aktif</b> pada portal wali murid."
+                                                      data-icon="question"
+                                                      data-btn-text="<i class='bi bi-box-arrow-up me-1'></i> Ya, Aktifkan"
+                                                      data-btn-class="btn-success"
+                                                  @else
+                                                      data-title="Arsipkan Raport?"
+                                                      data-html="Raport <b>{{ $atlet->nama }}</b> akan dipindahkan ke tab <b>Arsip Raport</b> pada portal wali murid."
+                                                      data-icon="warning"
+                                                      data-btn-text="<i class='bi bi-archive me-1'></i> Ya, Arsipkan"
+                                                      data-btn-class="btn-warning text-dark"
+                                                  @endif>
                                                 @csrf
                                                 @if($sudahTerbit->is_archived)
                                                     <button type="submit" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1" 
-                                                            onclick="return confirm('Aktifkan kembali raport {{ $atlet->nama }}? Raport akan muncul di tab Raport Aktif wali murid.')"
                                                             title="Kembalikan ke status aktif">
                                                         <i class="bi bi-box-arrow-up"></i>
                                                         <span>Aktifkan</span>
                                                     </button>
                                                 @else
                                                     <button type="submit" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1" 
-                                                            onclick="return confirm('Arsipkan raport {{ $atlet->nama }}? Raport akan dipindahkan ke tab Arsip Raport pada portal wali murid.')"
                                                             title="Pindahkan ke arsip">
                                                         <i class="bi bi-archive"></i>
                                                         <span>Arsip</span>
@@ -255,12 +262,16 @@
                                                 @endif
                                             </form>
                                         @else
-                                            <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST">
+                                            <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST" class="form-confirm-action"
+                                                  data-title="Generate & Terbitkan Raport?"
+                                                  data-html="Raport <b>{{ $atlet->nama }}</b> akan diakumulasi dari <b>{{ $jumlahDinilai }} penilaian asesor</b> dan langsung diterbitkan ke Portal Wali Murid."
+                                                  data-icon="info"
+                                                  data-btn-text="<i class='bi bi-send-check me-1'></i> Ya, Terbitkan"
+                                                  data-btn-class="btn-primary">
                                                 @csrf
                                                 <input type="hidden" name="periode_bulan" value="{{ $periodeSekarang }}">
                                                 <button type="submit" class="btn btn-sm {{ $jumlahDinilai > 0 ? 'btn-primary shadow-sm' : 'btn-light border text-muted' }} d-inline-flex align-items-center gap-1" 
-                                                    {{ $jumlahDinilai == 0 ? 'disabled' : '' }}
-                                                    onclick="return confirm('Generate nilai rata-rata dari {{ $jumlahDinilai }} asesor dan Terbitkan ke Portal Wali?')">
+                                                    {{ $jumlahDinilai == 0 ? 'disabled' : '' }} title="Generate dan terbitkan raport">
                                                     <i class="bi bi-cpu"></i>
                                                     <span>Generate & Terbitkan ({{ $jumlahDinilai }})</span>
                                                 </button>
@@ -283,12 +294,33 @@
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body p-4">
+                                                        @php
+                                                            $mPosisi = $atlet->posisi_bermain ?? '';
+                                                            $mIsKiper = stripos($mPosisi, 'Kiper') !== false || stripos($mPosisi, 'GK') !== false;
+                                                            $mDisplayCategories = [];
+                                                            if (!empty($sudahTerbit->scores_summary) && is_array($sudahTerbit->scores_summary)) {
+                                                                foreach ($sudahTerbit->scores_summary as $kId => $item) {
+                                                                    $cTarget = $item['target_posisi'] ?? null;
+                                                                    $namaLower = strtolower($item['nama'] ?? '');
+                                                                    $isCatKiper = str_contains($namaLower, 'kiper') || str_contains($namaLower, 'goalkeeper');
+
+                                                                    if ($cTarget) {
+                                                                        if ($mIsKiper && $cTarget !== 'Kiper') continue;
+                                                                        if (!$mIsKiper && $cTarget === 'Kiper') continue;
+                                                                    } else {
+                                                                        if ($mIsKiper && !$isCatKiper) continue;
+                                                                        if (!$mIsKiper && $isCatKiper) continue;
+                                                                    }
+                                                                    $mDisplayCategories[$kId] = $item;
+                                                                }
+                                                            }
+                                                        @endphp
                                                         <h6 class="small fw-bold text-uppercase text-secondary mb-3">
                                                             <i class="bi bi-bar-chart-fill text-primary me-1"></i>Ringkasan Rata-rata per Kategori:
                                                         </h6>
                                                         <div class="row g-2 mb-4">
-                                                            @if(!empty($sudahTerbit->scores_summary) && is_array($sudahTerbit->scores_summary))
-                                                                @foreach($sudahTerbit->scores_summary as $item)
+                                                            @if(!empty($mDisplayCategories))
+                                                                @foreach($mDisplayCategories as $item)
                                                                     <div class="col-6 col-md-3">
                                                                         <div class="p-2.5 rounded-3 bg-light border text-center">
                                                                             <span class="small fw-semibold text-dark d-block text-truncate">{{ $item['nama'] ?? 'Kategori' }}</span>
@@ -305,12 +337,12 @@
                                                         </div>
 
                                                         <!-- Rincian Sub Poin per Kategori -->
-                                                        @if(!empty($sudahTerbit->scores_summary) && is_array($sudahTerbit->scores_summary))
+                                                        @if(!empty($mDisplayCategories))
                                                             <h6 class="small fw-bold text-uppercase text-secondary mb-3">
                                                                 <i class="bi bi-list-check text-primary me-1"></i>Rincian Penilaian Aspek (Skor 1–5):
                                                             </h6>
                                                             <div class="d-flex flex-column gap-3 mb-4">
-                                                                @foreach($sudahTerbit->scores_summary as $kIdx => $catSummary)
+                                                                @foreach($mDisplayCategories as $kIdx => $catSummary)
                                                                     @if(!empty($catSummary['sub_points']) && is_array($catSummary['sub_points']))
                                                                         <div class="border rounded-3 overflow-hidden">
                                                                             <div class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
@@ -354,9 +386,9 @@
                                                             }
                                                             $mSkor100 = (float)($sudahTerbit->rekap_skor_100 ?? 0);
                                                             $mSkorRata = (float)($sudahTerbit->rekap_rata_rata ?? 0);
-                                                            if ($mSkor100 <= 0 && !empty($sudahTerbit->scores_summary) && is_array($sudahTerbit->scores_summary)) {
+                                                            if ($mSkor100 <= 0 && !empty($mDisplayCategories)) {
                                                                 $tTot = 0; $tCnt = 0;
-                                                                foreach ($sudahTerbit->scores_summary as $c) {
+                                                                foreach ($mDisplayCategories as $c) {
                                                                     if (!empty($c['nilai']) && (float)$c['nilai'] > 0) {
                                                                         $tTot += (float)$c['nilai'];
                                                                         $tCnt++;
@@ -647,7 +679,12 @@
                                             </td>
                                             <td class="text-end">
                                                 @if(!$per->is_active)
-                                                    <form action="{{ route('admin.reports.periods.destroy', $per->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus periode {{ $per->nama }}?');">
+                                                    <form action="{{ route('admin.reports.periods.destroy', $per->id) }}" method="POST" class="d-inline form-confirm-action"
+                                                          data-title="Hapus Periode Raport?"
+                                                          data-html="Yakin ingin menghapus periode <b>{{ $per->nama }}</b>?<br><small class='text-muted'>Data raport yang terkait mungkin terpengaruh.</small>"
+                                                          data-icon="warning"
+                                                          data-btn-text="<i class='bi bi-trash3-fill me-1'></i> Ya, Hapus"
+                                                          data-btn-class="btn-danger">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Hapus Periode">

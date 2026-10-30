@@ -57,7 +57,18 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/dashboard', function () {
-        return view('admin.dashboard');
+        $stats = \Illuminate\Support\Facades\Cache::remember('admin_dashboard_stats', 120, function () {
+            $pemasukan = \App\Models\Finance::where('jenis', 'pemasukan')->sum('nominal');
+            $pengeluaran = \App\Models\Finance::where('jenis', 'pengeluaran')->sum('nominal');
+            return [
+                'totalAthlete'      => \App\Models\Athlete::count(),
+                'totalCoach'        => \App\Models\Coach::count(),
+                'totalSaldo'        => (float)($pemasukan - $pengeluaran),
+                'totalAnnouncement' => \App\Models\Announcement::where('is_active', true)->count(),
+            ];
+        });
+
+        return view('admin.dashboard', $stats);
     })->name('dashboard');
 
     // --- EKSPOR EXCEL (read-only, throttle sedang) ---
@@ -138,6 +149,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/reports/generate-final/{athlete}', [ReportController::class, 'generateFinalRaport'])
         ->middleware('throttle:20,1')
         ->name('reports.generate-final');
+    Route::get('/admin/reports/{id}/edit', [\App\Http\Controllers\Admin\ReportController::class, 'edit'])->name('admin.reports.edit');
+    Route::put('/admin/reports/{id}', [\App\Http\Controllers\Admin\ReportController::class, 'update'])->name('admin.reports.update');
 
     // --- JADWAL ---
     Route::resource('/schedules', ScheduleController::class);
@@ -180,12 +193,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->middleware('throttle:30,1')
         ->name('assessment_categories.toggle');
     
-        Route::resource('biography', \App\Http\Controllers\Admin\AthleteBiographyController::class);
-        Route::post('biography/import', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'import'])->name('biography.import');
-        Route::post('biography/{id}/achievement', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeAchievement'])->name('biography.achievement.store');
-        Route::post('biography/{id}/statistic', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeStatistic'])->name('biography.statistic.store');
-        Route::get('biography/{id}/print', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'print'])->name('biography.print');
-    });
+    // --- BIOGRAFI ATLET ---
+    Route::post('biography/import', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'import'])->name('biography.import');
+    Route::post('biography/{id}/achievement', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeAchievement'])->name('biography.achievement.store');
+    Route::post('biography/{id}/statistic', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeStatistic'])->name('biography.statistic.store');
+    Route::get('biography/{id}/print', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'print'])->name('biography.print');
+    Route::resource('biography', \App\Http\Controllers\Admin\AthleteBiographyController::class);
+});
 
 // =============================================================================
 // RUTE PORTAL WALI MURID — dilindungi auth + role

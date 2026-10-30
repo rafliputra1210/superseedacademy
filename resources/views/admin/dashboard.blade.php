@@ -8,7 +8,7 @@
         <div class="card card-custom p-4 h-100 d-flex flex-row justify-content-between align-items-center">
             <div>
                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Atlet Terdaftar</h6>
-                <h2 class="mb-0 fw-black text-brand-navy">{{ \App\Models\Athlete::count() }} <span class="fs-6 text-secondary fw-normal">Siswa</span></h2>
+                <h2 class="mb-0 fw-black text-brand-navy">{{ $totalAthlete ?? \App\Models\Athlete::count() }} <span class="fs-6 text-secondary fw-normal">Siswa</span></h2>
             </div>
             <div class="bg-brand-light text-brand-blue rounded p-3 d-flex align-items-center justify-content-center">
                 <i class="bi bi-people-fill fs-3"></i>
@@ -21,7 +21,7 @@
         <div class="card card-custom p-4 h-100 d-flex flex-row justify-content-between align-items-center">
             <div>
                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Coach</h6>
-                <h2 class="mb-0 fw-black text-brand-navy">{{ \App\Models\Coach::count() }} <span class="fs-6 text-secondary fw-normal">Pelatih</span></h2>
+                <h2 class="mb-0 fw-black text-brand-navy">{{ $totalCoach ?? \App\Models\Coach::count() }} <span class="fs-6 text-secondary fw-normal">Pelatih</span></h2>
             </div>
             <div class="bg-brand-light text-brand-blue rounded p-3 d-flex align-items-center justify-content-center">
                 <i class="bi bi-person-badge-fill fs-3"></i>
@@ -35,11 +35,9 @@
             <div>
                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Saldo Uang Kas</h6>
                 @php
-                    $pemasukan = \App\Models\Finance::where('jenis', 'pemasukan')->sum('nominal');
-                    $pengeluaran = \App\Models\Finance::where('jenis', 'pengeluaran')->sum('nominal');
-                    $totalSaldo = $pemasukan - $pengeluaran;
+                    $finalSaldo = $totalSaldo ?? (\App\Models\Finance::where('jenis', 'pemasukan')->sum('nominal') - \App\Models\Finance::where('jenis', 'pengeluaran')->sum('nominal'));
                 @endphp
-                <h4 class="mb-0 fw-black text-brand-navy">Rp {{ number_format($totalSaldo, 0, ',', '.') }}</h4>
+                <h4 class="mb-0 fw-black text-brand-navy">Rp {{ number_format($finalSaldo, 0, ',', '.') }}</h4>
             </div>
             <div class="bg-brand-light text-brand-blue rounded p-3 d-flex align-items-center justify-content-center">
                 <i class="bi bi-wallet2 fs-3"></i>
@@ -52,7 +50,7 @@
         <div class="card card-custom p-4 h-100 d-flex flex-row justify-content-between align-items-center">
             <div>
                 <h6 class="text-uppercase mb-2 text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Pengumuman Aktif</h6>
-                <h2 class="mb-0 fw-black text-brand-navy">{{ \App\Models\Announcement::where('is_active', true)->count() }}</h2>
+                <h2 class="mb-0 fw-black text-brand-navy">{{ $totalAnnouncement ?? \App\Models\Announcement::where('is_active', true)->count() }}</h2>
             </div>
             <div class="bg-brand-light text-brand-blue rounded p-3 d-flex align-items-center justify-content-center">
                 <i class="bi bi-megaphone-fill fs-3"></i>

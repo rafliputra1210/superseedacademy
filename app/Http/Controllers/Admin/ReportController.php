@@ -228,8 +228,15 @@ class ReportController extends Controller
             }
         }
 
-        // 2. Hitung Rata-rata Otomatis per Kategori Aktif
-        $categories = AssessmentCategory::where('is_active', true)->orderBy('urutan', 'asc')->get();
+        // 2. Hitung Rata-rata Otomatis per Kategori Aktif sesuai Posisi Atlet
+        $posisiBermain = $athlete->posisi_bermain ?? '';
+        $isKiper = stripos($posisiBermain, 'Kiper') !== false || stripos($posisiBermain, 'GK') !== false;
+        $targetPosisi = $isKiper ? 'Kiper' : 'Player';
+
+        $categories = AssessmentCategory::where('is_active', true)
+                                        ->where('target_posisi', $targetPosisi)
+                                        ->orderBy('urutan', 'asc')
+                                        ->get();
         $scoresSummary = [];
         $legacy = [
             'nilai_teknik_final' => 0,
@@ -316,10 +323,11 @@ class ReportController extends Controller
             }
 
             $scoresSummary[$cat->id] = [
-                'kategori_id' => $cat->id,
-                'nama'        => $cat->nama,
-                'nilai'       => $avg,
-                'sub_points'  => $aggregatedSubPoints,
+                'kategori_id'   => $cat->id,
+                'target_posisi' => $cat->target_posisi,
+                'nama'          => $cat->nama,
+                'nilai'         => $avg,
+                'sub_points'    => $aggregatedSubPoints,
             ];
 
             $slug = Str::slug($cat->nama);
@@ -376,8 +384,11 @@ class ReportController extends Controller
         // Pastikan kalkulasi rekap dan observasi terisi (auto-fix jika sebelumnya 0 / belum sync)
         $this->ensureRaportRekapData($raport);
 
+        // Eager load assessment categories untuk mencegah query berulang di blade
+        $activeCategories = AssessmentCategory::all()->keyBy('id');
+
         // Buka halaman khusus cetak PDF
-        return view('admin.reports.print', compact('raport'));
+        return view('admin.reports.print', compact('raport', 'activeCategories'));
     }
 
     /**
@@ -409,13 +420,93 @@ class ReportController extends Controller
             'athletes', 'assessors', 'allScores', 'periodeSekarang', 'raports'
         ));
     }
+    public function edit($id)
+    {
+        $raport = \App\Models\Raport::with('athlete')->findOrFail($id);
+        
+        // Decode observasi kualitatif jika tersimpan sebagai JSON
+        $observasi = is_string($raport->observasi_kualitatif) 
+            ? json_decode($raport->observasi_kualitatif, true) 
+            : ($raport->observasi_kualitatif ?? []);
 
+        return view('admin.reports.edit', compact('raport', 'observasi'));
+    }
+
+    // Menyimpan perubahan raport
+    public function update(Request $request, $id)
+    {
+        $raport = \App\Models\Raport::findOrFail($id);
+
+        // Validasi input
+        $request->validate([
+            'catatan_pelatih' => 'nullable|string',
+            'kekuatan_utama' => 'nullable|string',
+            'area_peningkatan' => 'nullable|string',
+            'catatan_perilaku' => 'nullable|string',
+            'fokus_latihan' => 'nullable|string',
+        ]);
+
+        // Kemas kembali observasi kualitatif menjadi format JSON/Array
+        $observasi = [
+            'kekuatan_utama' => $request->kekuatan_utama,
+            'area_peningkatan' => $request->area_peningkatan,
+            'catatan_perilaku' => $request->catatan_perilaku,
+            'fokus_latihan' => $request->fokus_latihan,
+        ];
+
+        // Update database
+        $raport->update([
+            'catatan_pelatih' => $request->catatan_pelatih,
+            'observasi_kualitatif' => json_encode($observasi),
+            // Jika ada field nilai angka yang mau diedit, tambahkan di sini
+        ]);
+
+        return redirect()->route('admin.reports.index')->with('success', 'Data Raport berhasil diperbarui!');
+    }
     /**
      * Memastikan data rekap_skor_100, rekap_rata_rata, dan observasi_kualitatif terisi
      */
     private function ensureRaportRekapData(Raport $raport)
     {
         $updated = false;
+
+        $athlete = $raport->athlete;
+        if ($athlete) {
+            $posisi = $athlete->posisi_bermain ?? '';
+            $isKiper = stripos($posisi, 'Kiper') !== false || stripos($posisi, 'GK') !== false;
+            $allCategories = AssessmentCategory::all()->keyBy('id');
+
+            // 0. Bersihkan kategori yang tidak sesuai posisi pemain (contoh: kiper pada outfield player)
+            if (!empty($raport->scores_summary) && is_array($raport->scores_summary)) {
+                $cleanSummary = [];
+                $hasWrongCategory = false;
+
+                foreach ($raport->scores_summary as $kId => $cat) {
+                    $catModel = $allCategories[$cat['kategori_id'] ?? $kId] ?? null;
+                    $cTarget = $cat['target_posisi'] ?? ($catModel->target_posisi ?? null);
+
+                    $namaLower = strtolower($cat['nama'] ?? '');
+                    $isCatKiper = str_contains($namaLower, 'kiper') || str_contains($namaLower, 'goalkeeper');
+
+                    if ($cTarget) {
+                        if ($isKiper && $cTarget !== 'Kiper') { $hasWrongCategory = true; continue; }
+                        if (!$isKiper && $cTarget === 'Kiper') { $hasWrongCategory = true; continue; }
+                    } else {
+                        if ($isKiper && !$isCatKiper) { $hasWrongCategory = true; continue; }
+                        if (!$isKiper && $isCatKiper) { $hasWrongCategory = true; continue; }
+                    }
+
+                    $cleanSummary[$kId] = $cat;
+                }
+
+                if ($hasWrongCategory) {
+                    $raport->scores_summary = $cleanSummary;
+                    $updated = true;
+                    $raport->rekap_skor_100 = 0;
+                    $raport->rekap_rata_rata = 0;
+                }
+            }
+        }
 
         // 1. Cek Rekap Nilai: jika masih 0 atau null, kalkulasikan dari scores_summary
         if (empty($raport->rekap_skor_100) || (float)$raport->rekap_skor_100 <= 0 || empty($raport->rekap_rata_rata) || (float)$raport->rekap_rata_rata <= 0) {

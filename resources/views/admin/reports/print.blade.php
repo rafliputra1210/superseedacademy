@@ -300,9 +300,40 @@
             </div>
         </div>
 
+        @php
+            // DETEKSI POSISI BERMAIN ATLET (KIPER vs PLAYER)
+            $posisiBermain = $raport->athlete->posisi_bermain ?? '';
+            $isKiper = stripos($posisiBermain, 'Kiper') !== false || stripos($posisiBermain, 'GK') !== false;
+            $targetPosisi = $isKiper ? 'Kiper' : 'Player';
+
+            $activeCategories = $activeCategories ?? \App\Models\AssessmentCategory::all()->keyBy('id');
+
+            // Filter agar hanya aspek yang sesuai dengan posisi atlet yang dicetak
+            $displayCategories = [];
+            if (!empty($raport->scores_summary) && is_array($raport->scores_summary)) {
+                foreach ($raport->scores_summary as $kId => $catItem) {
+                    $catModel = $activeCategories[$catItem['kategori_id'] ?? $kId] ?? null;
+                    $cTarget = $catItem['target_posisi'] ?? ($catModel->target_posisi ?? null);
+
+                    $namaLower = strtolower($catItem['nama'] ?? '');
+                    $isCatKiper = str_contains($namaLower, 'kiper') || str_contains($namaLower, 'goalkeeper');
+
+                    if ($cTarget) {
+                        if ($isKiper && $cTarget !== 'Kiper') continue;
+                        if (!$isKiper && $cTarget === 'Kiper') continue;
+                    } else {
+                        if ($isKiper && !$isCatKiper) continue;
+                        if (!$isKiper && $isCatKiper) continue;
+                    }
+
+                    $displayCategories[] = $catItem;
+                }
+            }
+        @endphp
+
         <!-- RINCIAN ASPEK PENILAIAN (SKALA 1 - 5) -->
-        @if (!empty($raport->scores_summary) && is_array($raport->scores_summary))
-            @foreach ($raport->scores_summary as $catIdx => $catSum)
+        @if (!empty($displayCategories))
+            @foreach ($displayCategories as $catIdx => $catSum)
                 @php
                     $subItems = $catSum['sub_points'] ?? [];
                     $catScore = (float) ($catSum['nilai'] ?? 0);
@@ -354,27 +385,25 @@
             $skor100 = (float) ($raport->rekap_skor_100 ?? 0);
             $skorRata = (float) ($raport->rekap_rata_rata ?? 0);
 
-            // Fallback kalkulasi jika data lama belum terisi
-            if ($skor100 <= 0 && !empty($raport->scores_summary) && is_array($raport->scores_summary)) {
-                $tmpTot = 0;
-                $tmpC = 0;
-                foreach ($raport->scores_summary as $cat) {
-                    if (!empty($cat['sub_points']) && is_array($cat['sub_points'])) {
-                        foreach ($cat['sub_points'] as $sp) {
-                            if (isset($sp['skor']) && (float) $sp['skor'] > 0) {
-                                $tmpTot += (float) $sp['skor'];
-                                $tmpC++;
-                            }
+            // Hitung akumulasi nilai murni dari aspek yang sesuai dengan posisi atlet
+            $tmpTot = 0;
+            $tmpC = 0;
+            foreach ($displayCategories as $cat) {
+                if (!empty($cat['sub_points']) && is_array($cat['sub_points'])) {
+                    foreach ($cat['sub_points'] as $sp) {
+                        if (isset($sp['skor']) && (float) $sp['skor'] > 0) {
+                            $tmpTot += (float) $sp['skor'];
+                            $tmpC++;
                         }
-                    } elseif (!empty($cat['nilai']) && (float) $cat['nilai'] > 0) {
-                        $tmpTot += (float) $cat['nilai'];
-                        $tmpC++;
                     }
+                } elseif (!empty($cat['nilai']) && (float) $cat['nilai'] > 0) {
+                    $tmpTot += (float) $cat['nilai'];
+                    $tmpC++;
                 }
-                if ($tmpC > 0) {
-                    $skorRata = round($tmpTot / $tmpC, 2);
-                    $skor100 = round(($skorRata / 5) * 100);
-                }
+            }
+            if ($tmpC > 0) {
+                $skorRata = round($tmpTot / $tmpC, 2);
+                $skor100 = round(($skorRata / 5) * 100);
             }
         @endphp
 

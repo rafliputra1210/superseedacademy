@@ -388,9 +388,17 @@
         <!-- Main Container -->
         <main class="p-4 flex-grow-1">
             @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm d-flex align-items-center" role="alert" style="background-color: #ecfdf5; color: #065f46;">
+                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm d-flex align-items-center mb-3" role="alert" style="background-color: #ecfdf5; color: #065f46; border-radius: 12px;">
                     <i class="bi bi-check-circle-fill me-2 fs-5"></i> 
                     <div>{{ session('success') }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm d-flex align-items-center mb-3" role="alert" style="background-color: #fef2f2; color: #991b1b; border-radius: 12px;">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i> 
+                    <div>{{ session('error') }}</div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
@@ -413,111 +421,8 @@
     </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- CUSTOM CONFIRM MODAL (Global — menggantikan browser confirm) -->
-<!-- ============================================================ -->
-<div id="customConfirmModal" style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-">
-    <!-- Backdrop blur -->
-    <div id="confirmBackdrop" style="
-        position: absolute;
-        inset: 0;
-        background: rgba(10, 25, 47, 0.65);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        animation: fadeInBackdrop 0.2s ease;
-    "></div>
-
-    <!-- Modal Card -->
-    <div id="confirmCard" style="
-        position: relative;
-        background: #ffffff;
-        border-radius: 20px;
-        padding: 2rem;
-        max-width: 420px;
-        width: 100%;
-        box-shadow: 0 25px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.05);
-        animation: slideUpIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-        text-align: center;
-    ">
-        <!-- Icon -->
-        <div style="
-            width: 72px; height: 72px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #fff3cd, #ffe083);
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1.25rem;
-            box-shadow: 0 8px 24px rgba(251, 191, 36, 0.35);
-        ">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                    stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </div>
-
-        <!-- Title -->
-        <h5 style="font-weight: 700; color: #0a192f; margin-bottom: 0.5rem; font-size: 1.15rem;">Konfirmasi Hapus</h5>
-
-        <!-- Message -->
-        <p id="confirmMessage" style="color: #64748b; font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.75rem;">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
-
-        <!-- Buttons -->
-        <div style="display: flex; gap: 0.75rem; justify-content: center;">
-            <button id="confirmCancel" style="
-                flex: 1;
-                padding: 0.65rem 1.25rem;
-                border-radius: 12px;
-                border: 2px solid #e2e8f0;
-                background: #f8fafc;
-                color: #475569;
-                font-weight: 600;
-                font-size: 0.9rem;
-                cursor: pointer;
-                transition: all 0.2s;
-                font-family: 'Inter', sans-serif;
-            " onmouseover="this.style.borderColor='#cbd5e1';this.style.background='#f1f5f9'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
-                <i class="bi bi-x-lg me-1"></i> Batal
-            </button>
-            <button id="confirmOk" style="
-                flex: 1;
-                padding: 0.65rem 1.25rem;
-                border-radius: 12px;
-                border: none;
-                background: linear-gradient(135deg, #ef4444, #dc2626);
-                color: #ffffff;
-                font-weight: 700;
-                font-size: 0.9rem;
-                cursor: pointer;
-                transition: all 0.2s;
-                font-family: 'Inter', sans-serif;
-                box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
-            " onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(220,38,38,0.45)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(220,38,38,0.35)'">
-                <i class="bi bi-trash3-fill me-1"></i> Ya, Hapus!
-            </button>
-        </div>
-    </div>
-</div>
-
-<style>
-@keyframes fadeInBackdrop { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUpIn {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes slideDownOut {
-    from { opacity: 1; transform: translateY(0) scale(1); }
-    to   { opacity: 0; transform: translateY(20px) scale(0.95); }
-}
-</style>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
     // Inisialisasi Searchable Select secara global
@@ -532,7 +437,7 @@
 </script>
 <script>
 /* ============================================================
-   SIDEBAR TOGGLE
+   SIDEBAR TOGGLE & SWEETALERT2 GLOBAL CONFIRM / TOAST
    ============================================================ */
 document.addEventListener("DOMContentLoaded", function () {
     const sidebar  = document.getElementById('sidebar');
@@ -552,55 +457,158 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-/* ============================================================
-   CUSTOM CONFIRM MODAL — intercept semua form dengan data-confirm
-   atau onsubmit berisi "confirm("  
-   ============================================================ */
-    const modal     = document.getElementById('customConfirmModal');
-    const backdrop  = document.getElementById('confirmBackdrop');
-    const card      = document.getElementById('confirmCard');
-    const msgEl     = document.getElementById('confirmMessage');
-    const okBtn     = document.getElementById('confirmOk');
-    const cancelBtn = document.getElementById('confirmCancel');
-    let targetForm  = null;
-
-    function showConfirm(msg, form) {
-        targetForm = form;
-        msgEl.textContent = msg || 'Apakah Anda yakin ingin menghapus data ini?';
-        modal.style.display = 'flex';
-        card.style.animation = 'slideUpIn 0.28s cubic-bezier(0.34,1.56,0.64,1)';
-    }
-
-    function closeConfirm() {
-        card.style.animation = 'slideDownOut 0.2s ease forwards';
-        setTimeout(() => { modal.style.display = 'none'; targetForm = null; }, 200);
-    }
-
-    okBtn.addEventListener('click', function () {
-        if (targetForm) {
-            modal.style.display = 'none';
-            targetForm.submit();
+    // --- Toast Notification Helper ---
+    window.AppToast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
         }
     });
 
-    cancelBtn.addEventListener('click', closeConfirm);
-    backdrop.addEventListener('click', closeConfirm);
+    @if(session('success'))
+        AppToast.fire({
+            icon: 'success',
+            title: @json(session('success'))
+        });
+    @endif
+    @if(session('error'))
+        AppToast.fire({
+            icon: 'error',
+            title: @json(session('error'))
+        });
+    @endif
 
-    /* Escape key tutup modal */
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal.style.display === 'flex') closeConfirm();
-    });
+    // --- SweetAlert Confirm Helper ---
+    function fireSweetConfirm(options, onConfirmed) {
+        Swal.fire({
+            title: options.title || 'Konfirmasi Tindakan',
+            html: options.html || options.text || 'Apakah Anda yakin ingin melanjutkan?',
+            icon: options.icon || 'question',
+            showCancelButton: true,
+            confirmButtonText: options.btnText || 'Ya, Lanjutkan',
+            cancelButtonText: options.cancelText || 'Batal',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+                popup: 'rounded-4 p-4 shadow-lg border-0',
+                title: 'fs-5 fw-bold text-dark mb-2',
+                htmlContainer: 'text-secondary small line-relaxed',
+                confirmButton: `btn ${options.btnClass || 'btn-primary'} px-4 py-2 rounded-3 fw-semibold shadow-sm`,
+                cancelButton: 'btn btn-light border px-4 py-2 rounded-3 fw-medium text-secondary me-2'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Memproses...',
+                    text: 'Mohon tunggu sebentar...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                onConfirmed();
+            }
+        });
+    }
 
-    /* Intercept semua form yang punya attribute data-confirm */
-    document.querySelectorAll('form[data-confirm]').forEach(function(form) {
+    // 1. Intercept form dengan class .form-confirm-action
+    document.querySelectorAll('form.form-confirm-action').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            showConfirm(form.getAttribute('data-confirm'), form);
+            fireSweetConfirm({
+                title: form.getAttribute('data-title'),
+                html: form.getAttribute('data-html') || form.getAttribute('data-text'),
+                icon: form.getAttribute('data-icon') || 'question',
+                btnText: form.getAttribute('data-btn-text') || 'Ya, Lanjutkan',
+                btnClass: form.getAttribute('data-btn-class') || 'btn-primary'
+            }, () => form.submit());
         });
     });
 
-    /* Intercept form yang masih pakai onsubmit=confirm() lama */
-    document.querySelectorAll('form[onsubmit]').forEach(function(form) {
+    // 2. Intercept form dengan attribute data-confirm
+    document.querySelectorAll('form[data-confirm]:not(.form-confirm-action)').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fireSweetConfirm({
+                title: 'Konfirmasi Tindakan',
+                html: form.getAttribute('data-confirm'),
+                icon: 'warning',
+                btnText: 'Ya, Lanjutkan',
+                btnClass: 'btn-danger'
+            }, () => form.submit());
+        });
+    });
+
+    // 3. Intercept tombol lama dengan onclick="return confirm(...)"
+    document.querySelectorAll('button[onclick*="confirm("], a[onclick*="confirm("], input[type="submit"][onclick*="confirm("]').forEach(function(el) {
+        const onclickAttr = el.getAttribute('onclick') || '';
+        const match = onclickAttr.match(/confirm\(['"](.*?)['"]\)/);
+        if (match) {
+            const msg = match[1];
+            el.removeAttribute('onclick');
+
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                const form = el.closest('form');
+                if (!form && el.tagName.toLowerCase() !== 'a') return;
+
+                const lower = msg.toLowerCase();
+                let title = 'Konfirmasi Tindakan';
+                let icon = 'question';
+                let btnText = 'Ya, Lanjutkan';
+                let btnClass = 'btn-primary';
+
+                if (lower.includes('perbarui') || lower.includes('update')) {
+                    title = 'Perbarui Raport?';
+                    icon = 'question';
+                    btnText = '<i class="bi bi-arrow-repeat me-1"></i> Ya, Perbarui';
+                    btnClass = 'btn-primary';
+                } else if (lower.includes('terbitkan') || lower.includes('generate')) {
+                    title = 'Generate & Terbitkan?';
+                    icon = 'info';
+                    btnText = '<i class="bi bi-send-check me-1"></i> Ya, Terbitkan';
+                    btnClass = 'btn-success';
+                } else if (lower.includes('arsip')) {
+                    title = 'Arsipkan Raport?';
+                    icon = 'warning';
+                    btnText = '<i class="bi bi-archive me-1"></i> Ya, Arsipkan';
+                    btnClass = 'btn-warning text-dark';
+                } else if (lower.includes('aktifkan')) {
+                    title = 'Aktifkan Raport?';
+                    icon = 'question';
+                    btnText = '<i class="bi bi-box-arrow-up me-1"></i> Ya, Aktifkan';
+                    btnClass = 'btn-success';
+                } else if (lower.includes('hapus') || lower.includes('delete')) {
+                    title = 'Konfirmasi Hapus';
+                    icon = 'warning';
+                    btnText = '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus';
+                    btnClass = 'btn-danger';
+                }
+
+                fireSweetConfirm({
+                    title: title,
+                    html: msg,
+                    icon: icon,
+                    btnText: btnText,
+                    btnClass: btnClass
+                }, () => {
+                    if (form) {
+                        form.submit();
+                    } else if (el.href) {
+                        window.location.href = el.href;
+                    }
+                });
+            });
+        }
+    });
+
+    // 4. Intercept form yang masih pakai onsubmit="return confirm(...)"
+    document.querySelectorAll('form[onsubmit*="confirm("]').forEach(function(form) {
         const attr = form.getAttribute('onsubmit') || '';
         const match = attr.match(/confirm\(['"](.*?)['"]\)/);
         if (match) {
@@ -608,7 +616,13 @@ document.addEventListener("DOMContentLoaded", function () {
             form.removeAttribute('onsubmit');
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                showConfirm(msg, form);
+                fireSweetConfirm({
+                    title: 'Konfirmasi Tindakan',
+                    html: msg,
+                    icon: 'warning',
+                    btnText: 'Ya, Lanjutkan',
+                    btnClass: 'btn-danger'
+                }, () => form.submit());
             });
         }
     });

@@ -55,9 +55,8 @@
                         @php
                             $nilaiAtletIni = $allScores->where('athlete_id', $atlet->id);
                             $jumlahDinilai = $nilaiAtletIni->count();
-                            $raportSelesai = \App\Models\Raport::where('athlete_id', $atlet->id)
-                                                            ->where('periode', $periodeSekarang)
-                                                            ->first();
+                            // Menggunakan koleksi $raports yang sudah di-load di controller (mencegah N+1 query)
+                            $raportSelesai = $raports->where('athlete_id', $atlet->id)->first();
                         @endphp
                     <tr>
                         <td>{{ $index + 1 }}</td>
@@ -92,20 +91,29 @@
                                 <a href="{{ route('admin.reports.print', $raportSelesai->id) }}" target="_blank" class="btn btn-sm btn-primary w-100 mb-1 fw-semibold">
                                     <i class="bi bi-printer me-1"></i> Cetak Raport
                                 </a>
-                                <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST">
+                                <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST" class="form-confirm-action"
+                                      data-title="Perbarui Akumulasi Raport?"
+                                      data-html="Hitung ulang akumulasi nilai raport <b>{{ $atlet->nama }}</b> dari penilaian asesor yang tersedia?"
+                                      data-icon="question"
+                                      data-btn-text="<i class='bi bi-arrow-repeat me-1'></i> Ya, Perbarui"
+                                      data-btn-class="btn-primary">
                                     @csrf
                                     <input type="hidden" name="periode_bulan" value="{{ $periodeSekarang }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100 py-0" style="font-size: 0.75rem;" 
-                                        onclick="return confirm('Perbarui ulang raport {{ $atlet->nama }}?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100 py-0" style="font-size: 0.75rem;" title="Perbarui ulang raport">
                                         <i class="bi bi-arrow-repeat"></i> Update Raport
                                     </button>
                                 </form>
                             @else
-                                <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST">
+                                <form action="{{ route('admin.reports.generate-final', $atlet->id) }}" method="POST" class="form-confirm-action"
+                                      data-title="Generate Nilai Final Raport?"
+                                      data-html="Generate nilai final untuk <b>{{ $atlet->nama }}</b> dari <b>{{ $jumlahDinilai }} asesor</b> yang sudah masuk?"
+                                      data-icon="info"
+                                      data-btn-text="<i class='bi bi-cpu me-1'></i> Ya, Generate"
+                                      data-btn-class="btn-success">
                                     @csrf
                                     <input type="hidden" name="periode_bulan" value="{{ $periodeSekarang }}">
                                     <button type="submit" class="btn btn-sm {{ $jumlahDinilai > 0 ? 'btn-success' : 'btn-secondary' }} w-100" 
-                                        onclick="return confirm('Generate nilai final dari {{ $jumlahDinilai }} asesor yang sudah masuk?')">
+                                        {{ $jumlahDinilai == 0 ? 'disabled' : '' }}>
                                         <i class="bi bi-cpu me-1"></i> Generate
                                     </button>
                                 </form>
@@ -133,9 +141,8 @@
         </div>
 
         @php
-            $daftarRaport = \App\Models\Raport::with('athlete')
-                ->where('periode', $periodeSekarang)
-                ->get();
+            // Memanfaatkan koleksi $raports yang sudah di-eager-load bersama relasi athlete dari controller
+            $daftarRaport = $raports;
         @endphp
 
         @if($daftarRaport->isEmpty())
