@@ -166,7 +166,11 @@
                             <img src="{{ $editFoto }}"
                                  alt="Foto {{ $biography->athlete->nama ?? '' }}"
                                  class="w-20 h-20 rounded-xl object-cover border-2 border-white shadow-md"
-                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-20 h-20 rounded-xl bg-slate-200 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400\'><i class=\'bi bi-person-fill text-3xl\'></i><span class=\'text-[10px] mt-0.5 font-medium\'>Tanpa Foto</span></div>';">
+                                 onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                            <div style="display: none;" class="w-20 h-20 rounded-xl bg-slate-200 border border-dashed border-slate-300 flex-col items-center justify-center text-slate-400">
+                                <i class="bi bi-person-fill text-3xl"></i>
+                                <span class="text-[10px] mt-0.5 font-medium">Tanpa Foto</span>
+                            </div>
                         @else
                             <div class="w-20 h-20 rounded-xl bg-slate-200 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
                                 <i class="bi bi-person-fill text-3xl"></i>

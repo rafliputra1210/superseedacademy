@@ -87,19 +87,22 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <!-- Foto Profil -->
-                                    @php
-                                        $bioFoto = $bio->foto_url;
-                                    @endphp
-                                    @if($bioFoto)
-                                        <img src="{{ $bioFoto }}" alt="Foto {{ $bio->athlete->nama ?? '' }}" 
-                                            class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm"
-                                            onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400\'><i class=\'bi bi-person-fill text-xl\'></i></div>';">
-                                    @else
-                                        <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                                    <!-- Foto Profil Avatar -->
+                                    <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 overflow-hidden shrink-0">
+                                        @php
+                                            $bioFoto = $bio->foto_url;
+                                        @endphp
+                                        @if($bioFoto)
+                                            <img src="{{ $bioFoto }}" alt="Foto {{ $bio->athlete->nama ?? '' }}" 
+                                                class="w-full h-full object-cover"
+                                                onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                            <div style="display: none;" class="w-full h-full items-center justify-center text-slate-400">
+                                                <i class="bi bi-person-fill text-xl"></i>
+                                            </div>
+                                        @else
                                             <i class="bi bi-person-fill text-xl"></i>
-                                        </div>
-                                    @endif
+                                        @endif
+                                    </div>
                                     
                                     <!-- Nama & NIS -->
                                     <div>

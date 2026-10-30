@@ -298,7 +298,8 @@
                             $fotoSrc = $biography->foto_url;
                         @endphp
                         @if($fotoSrc)
-                            <img src="{{ $fotoSrc }}" alt="Foto Atlet" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'sp-avatar-ph\'><i class=\'bi bi-person-fill\'></i></div>';">
+                            <img src="{{ $fotoSrc }}" alt="Foto Atlet" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                            <div style="display: none;" class="sp-avatar-ph"><i class="bi bi-person-fill"></i></div>
                         @else
                             <div class="sp-avatar-ph"><i class="bi bi-person-fill"></i></div>
                         @endif
