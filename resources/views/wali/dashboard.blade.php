@@ -90,12 +90,15 @@
 
             </ul>
 
-            {{-- 7. TOMBOL ABSENSI & RAPORT --}}
-            <div class="pt-3 border-top d-flex gap-2">
-                <a href="{{ route('wali.absensi', ['child_id' => $athlete->id]) }}" class="btn btn-outline-success btn-sm w-50 fw-semibold rounded-3">
+            {{-- 7. TOMBOL BIOGRAFI, ABSENSI & RAPORT --}}
+            <div class="pt-3 border-top d-flex flex-wrap gap-2">
+                <a href="{{ route('wali.biografi', ['child_id' => $athlete->id]) }}" class="btn btn-outline-primary btn-sm flex-fill fw-semibold rounded-3">
+                    <i class="bi bi-person-lines-fill me-1"></i> Biografi
+                </a>
+                <a href="{{ route('wali.absensi', ['child_id' => $athlete->id]) }}" class="btn btn-outline-success btn-sm flex-fill fw-semibold rounded-3">
                     <i class="bi bi-calendar-check me-1"></i> Absensi
                 </a>
-                <a href="{{ route('wali.raport', ['child_id' => $athlete->id]) }}" class="btn btn-success btn-sm w-50 fw-semibold rounded-3 shadow-sm" style="background-color: var(--brand-green); border-color: var(--brand-green);">
+                <a href="{{ route('wali.raport', ['child_id' => $athlete->id]) }}" class="btn btn-success btn-sm flex-fill fw-semibold rounded-3 shadow-sm" style="background-color: var(--brand-green); border-color: var(--brand-green);">
                     <i class="bi bi-award-fill me-1"></i> Raport
                 </a>
             </div>

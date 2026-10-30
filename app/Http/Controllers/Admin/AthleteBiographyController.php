@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Athlete;
 use App\Models\AthleteBiography;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage; 
+use Maatwebsite\Excel\Facades\Excel; 
+use App\Imports\BiographiesImport;
 
 class AthleteBiographyController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil data dengan pencarian dan filter sesuai spesifikasi[cite: 16, 18]
         $query = AthleteBiography::with('athlete');
 
         if ($request->has('search')) {
@@ -32,7 +34,6 @@ class AthleteBiographyController extends Controller
 
     public function create()
     {
-        // Ambil atlet yang belum punya biografi[cite: 17, 19]
         $athletes = Athlete::doesntHave('biography')->get();
         return view('admin.biography.create', compact('athletes'));
     }
@@ -50,26 +51,10 @@ class AthleteBiographyController extends Controller
         $data = $request->except('foto_profil');
 
         if ($request->hasFile('foto_profil')) {
-            $file = $request->file('foto_profil');
-            $ext = strtolower($file->guessExtension() ?: 'jpg');
-            $fileName = time() . '_' . \Illuminate\Support\Str::random(20) . '.' . $ext;
-
-            $destDir = public_path('uploads/biography_photos');
-            if (!file_exists($destDir)) {
-                mkdir($destDir, 0755, true);
-            }
-            $file->move($destDir, $fileName);
-
-            // Copy juga ke storage disk public untuk redundansi
-            $storageDir = storage_path('app/public/biography_photos');
-            if (!file_exists($storageDir)) {
-                @mkdir($storageDir, 0755, true);
-            }
-            @copy($destDir . '/' . $fileName, $storageDir . '/' . $fileName);
-
-            $data['foto_profil'] = 'uploads/biography_photos/' . $fileName;
+            // [CARA BENAR LARAVEL] Otomatis simpan ke storage/app/public/biography_photos
+            // Database hanya akan menyimpan string: 'biography_photos/nama_file.jpg'
+            $data['foto_profil'] = $request->file('foto_profil')->store('biography_photos', 'public');
         } else {
-            // Jika tidak upload, gunakan foto dari master data atlet jika ada
             $athlete = Athlete::find($request->athlete_id);
             if ($athlete && !empty($athlete->foto)) {
                 $data['foto_profil'] = $athlete->foto;
@@ -97,43 +82,14 @@ class AthleteBiographyController extends Controller
 
         $data = $request->except('foto_profil');
 
-        // Proses jika ada upload foto profil baru
         if ($request->hasFile('foto_profil')) {
-            $file = $request->file('foto_profil');
-            $ext = strtolower($file->guessExtension() ?: 'jpg');
-            $fileName = time() . '_' . \Illuminate\Support\Str::random(20) . '.' . $ext;
-
-            // Hapus foto lama jika ada
+            // Hapus file fisik foto lama agar hosting tidak penuh
             if ($biography->foto_profil) {
-                $oldBase = basename($biography->foto_profil);
-                $oldFiles = [
-                    public_path('uploads/biography_photos/' . $oldBase),
-                    public_path($biography->foto_profil),
-                    storage_path('app/public/biography_photos/' . $oldBase),
-                    storage_path('app/public/' . $biography->foto_profil),
-                ];
-                foreach ($oldFiles as $f) {
-                    if (file_exists($f) && is_file($f)) {
-                        @unlink($f);
-                    }
-                }
+                Storage::disk('public')->delete($biography->foto_profil);
             }
 
-            // Simpan ke public/uploads/biography_photos
-            $destDir = public_path('uploads/biography_photos');
-            if (!file_exists($destDir)) {
-                mkdir($destDir, 0755, true);
-            }
-            $file->move($destDir, $fileName);
-
-            // Copy juga ke storage disk public
-            $storageDir = storage_path('app/public/biography_photos');
-            if (!file_exists($storageDir)) {
-                @mkdir($storageDir, 0755, true);
-            }
-            @copy($destDir . '/' . $fileName, $storageDir . '/' . $fileName);
-
-            $data['foto_profil'] = 'uploads/biography_photos/' . $fileName;
+            // Simpan foto baru
+            $data['foto_profil'] = $request->file('foto_profil')->store('biography_photos', 'public');
         }
 
         $biography->update($data);
@@ -141,55 +97,27 @@ class AthleteBiographyController extends Controller
         return redirect()->route('admin.biography.index')->with('success', 'Data Biografi berhasil diperbarui.');
     }
 
-    // Fungsi untuk menghapus data biografi
     public function destroy(AthleteBiography $biography)
     {
-        // Hapus file foto dari server jika ada
+        // Hapus file fisik dari storage sebelum data dihapus dari database
         if ($biography->foto_profil) {
-            $oldBase = basename($biography->foto_profil);
-            $oldFiles = [
-                public_path('uploads/biography_photos/' . $oldBase),
-                public_path($biography->foto_profil),
-                storage_path('app/public/biography_photos/' . $oldBase),
-                storage_path('app/public/' . $biography->foto_profil),
-            ];
-            foreach ($oldFiles as $f) {
-                if (file_exists($f) && is_file($f)) {
-                    @unlink($f);
-                }
-            }
+            Storage::disk('public')->delete($biography->foto_profil);
         }
         
         $biography->delete();
 
         return redirect()->route('admin.biography.index')->with('success', 'Data Biografi berhasil dihapus secara permanen.');
     }
-    public function achievements()
-    {
-        return $this->hasMany(AthleteAchievement::class);
-    }
 
-    // Relasi ke Statistik (One to Many)
-    public function statistics()
-    {
-        return $this->hasMany(AthleteStatistic::class);
-    }
-
-    // Relasi ke Galeri (One to Many)
-    public function galleries()
-    {
-        return $this->hasMany(AthleteGallery::class);
-    }
     public function show($id)
     {
-        // Cari biografi beserta relasi atlet, prestasi, statistik, dan galeri
-        $biography = \App\Models\AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])->findOrFail($id);
-        
+        $biography = AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])->findOrFail($id);
         return view('admin.biography.show', compact('biography'));
     }
+
     public function storeAchievement(Request $request, $id)
     {
-        $biography = \App\Models\AthleteBiography::with('athlete')->findOrFail($id);
+        $biography = AthleteBiography::with('athlete')->findOrFail($id);
 
         $validated = $request->validate([
             'nama_turnamen' => 'required|string|max:255',
@@ -201,7 +129,6 @@ class AthleteBiographyController extends Controller
             'keterangan'    => 'nullable|string',
         ]);
 
-        // Pastikan kolom kategori selalu memiliki nilai (fallback KU atlet atau tanda '-')
         if (empty($validated['kategori'])) {
             $validated['kategori'] = !empty($biography->athlete->kelompok_umur)
                 ? 'KU-' . $biography->athlete->kelompok_umur
@@ -212,16 +139,31 @@ class AthleteBiographyController extends Controller
         return back()->with('success', 'Prestasi berhasil ditambahkan!');
     }
 
-    // Simpan data Statistik
     public function storeStatistic(Request $request, $id)
     {
-        $biography = \App\Models\AthleteBiography::findOrFail($id);
+        $biography = AthleteBiography::findOrFail($id);
         $biography->statistics()->create($request->all());
         return back()->with('success', 'Statistik pertandingan berhasil ditambahkan!');
     }
+
     public function print($id)
     {
-        $biography = \App\Models\AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])->findOrFail($id);
+        $biography = AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])->findOrFail($id);
         return view('admin.biography.print', compact('biography'));
+    }
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls,csv|max:2048'
+        ]);
+
+        try {
+            // Jalankan proses import
+            Excel::import(new BiographiesImport, $request->file('file_excel'));
+            
+            return redirect()->route('admin.biography.index')->with('success', 'Data Biografi berhasil di-import dari Excel!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal meng-import data: ' . $e->getMessage());
+        }
     }
 }

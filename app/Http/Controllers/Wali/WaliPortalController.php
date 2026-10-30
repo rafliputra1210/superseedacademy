@@ -165,4 +165,38 @@ class WaliPortalController extends Controller
 
         return redirect()->route('wali.profile')->with('success', 'Password akun Anda berhasil diperbarui! Gunakan password baru ini untuk login berikutnya.');
     }
+
+    // 7. Biografi Atlet (Curriculum Vitae / Profil Lengkap Akademi)
+    public function biografi(Request $request)
+    {
+        $myAthletes = Auth::user()->athletes;
+        $selectedId = $request->get('child_id', $myAthletes->first()->id ?? null);
+        $athlete = $myAthletes->where('id', $selectedId)->first() ?? $myAthletes->first();
+
+        $biography = null;
+        if ($athlete) {
+            $biography = \App\Models\AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])
+                ->where('athlete_id', $athlete->id)
+                ->first();
+        }
+
+        return view('wali.biografi', compact('myAthletes', 'athlete', 'biography'));
+    }
+
+    // 8. Cetak Biografi / CV Atlet untuk Wali Murid
+    public function printBiografi($id)
+    {
+        $myAthleteIds = Auth::user()->athletes->pluck('id')->toArray();
+        $biography = \App\Models\AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])
+            ->whereIn('athlete_id', $myAthleteIds)
+            ->findOrFail($id);
+
+        return view('admin.biography.print', compact('biography'));
+    }
+
+    // Aliasing untuk detail anak jika dipanggil dari route lain
+    public function detailAnak($id)
+    {
+        return redirect()->route('wali.biografi', ['child_id' => $id]);
+    }
 }

@@ -164,6 +164,9 @@
                                     </a>
                                 </div>
                             </td>
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImportExcel">
+                                <i class="bi bi-file-earmark-excel"></i> Import Excel
+                            </button>
                         </tr>
                     @endforelse
                 </tbody>
@@ -176,6 +179,41 @@
                 {{ $biographies->withQueryString()->links() }}
             </div>
         @endif
+    </div>
+</div>
+<!-- Modal Import Excel -->
+<div class="modal fade" id="modalImportExcel" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{{ route('admin.biography.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Import Data Biografi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Silakan upload file berformat <b>.xlsx</b> atau <b>.csv</b>.<br>
+                        Pastikan file Excel Anda memiliki header (baris pertama) dengan nama kolom berikut:
+                    </p>
+                    <ul class="small mb-3">
+                        <li><b>nis_atlet</b> (Wajib diisi NIS yang valid)</li>
+                        <li><b>kategori_kelas</b> (Isi dengan 1, 2, 3, atau 4)</li>
+                        <li><b>tanggal_bergabung</b> (Format Text: YYYY-MM-DD, misal: 2026-10-30)</li>
+                        <li><b>posisi</b> (Opsional)</li>
+                    </ul>
+                    
+                    <div class="mb-3">
+                        <label for="file_excel" class="form-label">Pilih File Excel</label>
+                        <input class="form-control" type="file" id="file_excel" name="file_excel" accept=".xlsx, .xls, .csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Upload & Import</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 @endsection

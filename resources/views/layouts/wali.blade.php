@@ -178,6 +178,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link nav-link-custom {{ request()->routeIs('wali.biografi*') ? 'active' : '' }}" href="{{ route('wali.biografi') }}">
+                            <i class="bi bi-person-lines-fill me-1"></i> Biografi
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link nav-link-custom {{ request()->routeIs('wali.absensi') ? 'active' : '' }}" href="{{ route('wali.absensi') }}">
                             <i class="bi bi-calendar-check-fill me-1"></i> Absensi
                         </a>
