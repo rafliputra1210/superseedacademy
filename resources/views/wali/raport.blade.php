@@ -361,7 +361,7 @@
                             @endif
 
                             <div class="d-flex justify-content-end mt-3">
-                                <a href="{{ route('admin.reports.print', $rf->id) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm">
+                                <a href="{{ route('wali.raport.print', $rf->id) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm">
                                     <i class="bi bi-printer"></i>
                                     <span>Cetak Raport Resmi (PDF)</span>
                                 </a>

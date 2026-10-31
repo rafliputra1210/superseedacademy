@@ -211,6 +211,7 @@ Route::middleware(['auth', 'role:wali_murid'])->prefix('portal-wali')->name('wal
     Route::get('/biografi/{id}/print', [WaliPortalController::class, 'printBiografi'])->name('biografi.print');
     Route::get('/absensi', [WaliPortalController::class, 'absensi'])->name('absensi');
     Route::get('/raport', [WaliPortalController::class, 'raport'])->name('raport');
+    Route::get('/raport/{id}/print', [WaliPortalController::class, 'printRaport'])->name('raport.print');
     Route::get('/keuangan', [WaliPortalController::class, 'keuangan'])->name('keuangan');
     Route::get('/pengumuman', [WaliPortalController::class, 'pengumuman'])->name('pengumuman');
     Route::get('/profil', [WaliPortalController::class, 'profile'])->name('profile');

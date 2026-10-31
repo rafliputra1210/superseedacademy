@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\Raport;
 use App\Models\Finance;
 use App\Models\Announcement;
+use App\Models\AssessmentCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -198,5 +199,17 @@ class WaliPortalController extends Controller
     public function detailAnak($id)
     {
         return redirect()->route('wali.biografi', ['child_id' => $id]);
+    }
+
+    // 9. Cetak Raport Resmi Anak untuk Wali Murid
+    public function printRaport($id)
+    {
+        $myAthleteIds = Auth::user()->athletes->pluck('id')->toArray();
+
+        $raport = Raport::whereIn('athlete_id', $myAthleteIds)
+            ->where('status_publish', 'Published')
+            ->findOrFail($id);
+
+        return app(\App\Http\Controllers\Admin\ReportController::class)->print($raport->id);
     }
 }
