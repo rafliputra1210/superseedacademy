@@ -28,6 +28,22 @@
         </div>
     @endif
 
+    <!-- Alert Warning -->
+    @if(session('warning'))
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-3 shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill text-amber-500 text-lg"></i>
+            <span class="font-medium">{{ session('warning') }}</span>
+        </div>
+    @endif
+
+    <!-- Alert Error -->
+    @if(session('error'))
+        <div class="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-3 shadow-sm">
+            <i class="bi bi-x-circle-fill text-rose-500 text-lg"></i>
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <!-- Panel Filter & Pencarian -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
         <form action="{{ route('admin.biography.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
@@ -169,14 +185,18 @@
                                     <i class="bi bi-person-vcard text-5xl mb-4 text-slate-300"></i>
                                     <p class="text-lg font-bold text-slate-700">Belum ada Biografi Atlet</p>
                                     <p class="text-sm mt-1 mb-4">Silakan tambahkan data biografi untuk mulai melacak profil dan statistik atlet.</p>
-                                    <a href="{{ route('admin.biography.create') }}" class="text-sm font-medium text-brand-blue hover:underline">
-                                        + Tambah Data Sekarang
-                                    </a>
+                                    <div class="flex items-center gap-2.5">
+                                        <a href="{{ route('admin.biography.create') }}" class="btn btn-primary btn-sm fw-medium px-3.5 py-2 text-white d-inline-flex align-items-center gap-1.5 shadow-sm" style="border-radius: 8px;">
+                                            <i class="bi bi-plus-lg"></i>
+                                            <span>Tambah Manual</span>
+                                        </a>
+                                        <button type="button" class="btn btn-success btn-sm fw-medium px-3.5 py-2 d-inline-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalImportExcel" style="border-radius: 8px;">
+                                            <i class="bi bi-file-earmark-excel-fill"></i>
+                                            <span>Import Excel</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImportExcel">
-                                <i class="bi bi-file-earmark-excel"></i> Import Excel
-                            </button>
                         </tr>
                     @endforelse
                 </tbody>
@@ -191,6 +211,7 @@
         @endif
     </div>
 </div>
+
 <!-- Modal Import Excel -->
 <div class="modal fade" id="modalImportExcel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -210,26 +231,38 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="alert alert-info border-0 d-flex gap-2 p-3 mb-3" style="background-color: #eff6ff; color: #1e40af; border-radius: 10px;">
-                        <i class="bi bi-info-circle-fill fs-5 flex-shrink-0"></i>
-                        <div class="small">
-                            Format file yang didukung: <strong>.xlsx, .xls, .csv</strong> (maks. 2MB).
+                    <!-- Banner Unduh Template Resmi -->
+                    <div class="d-flex align-items-center justify-content-between p-3 mb-3 rounded-3" style="background-color: #f0f7ff; border: 1px solid #bfdbfe;">
+                        <div class="d-flex align-items-center gap-2.5 me-2">
+                            <i class="bi bi-file-earmark-arrow-down-fill text-primary fs-3 flex-shrink-0"></i>
+                            <div>
+                                <div class="fw-bold text-dark small">Template Excel Lengkap dengan Nama Atlet</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Sudah otomatis memuat daftar NIS & Nama seluruh siswa atlet yang belum memiliki biografi.</div>
+                            </div>
                         </div>
+                        <a href="{{ route('admin.biography.template') }}" class="btn btn-primary btn-sm fw-semibold d-inline-flex align-items-center gap-1.5 px-3 py-1.5 flex-shrink-0 shadow-sm" style="border-radius: 8px;">
+                            <i class="bi bi-download"></i>
+                            <span>Unduh Template</span>
+                        </a>
                     </div>
 
                     <div class="card bg-light border-0 p-3 mb-3" style="border-radius: 10px;">
-                        <span class="fw-bold small text-dark mb-1 d-block">Ketentuan Header Kolom Excel:</span>
-                        <ul class="small text-secondary mb-0 ps-3" style="line-height: 1.6;">
-                            <li><code>nis_atlet</code> &mdash; Nomor Induk Siswa (Wajib terdaftar)</li>
-                            <li><code>kategori_kelas</code> &mdash; Kode kelas: <b>01</b> (New Born), <b>02</b> (KU-10), <b>03</b> (KU-13), <b>04</b> (KU-16)</li>
-                            <li><code>tanggal_bergabung</code> &mdash; Format YYYY-MM-DD (contoh: <b>2026-10-30</b>)</li>
-                            <li><code>posisi</code> &mdash; Posisi bermain (Opsional)</li>
+                        <span class="fw-bold small text-dark mb-1.5 d-block">Ketentuan Header Kolom Excel:</span>
+                        <ul class="small text-secondary mb-0 ps-3" style="line-height: 1.6; font-size: 0.8rem;">
+                            <li><code>nis_atlet</code> &mdash; Nomor Induk Siswa (Wajib &mdash; harus terdaftar di data Atlet)</li>
+                            <li><code>nama_atlet</code> &mdash; Nama lengkap atlet (Memudahkan pengecekan dan identifikasi)</li>
+                            <li><code>kategori_kelas</code> &mdash; Kode kelas: <b>01</b> (New Born), <b>02</b> (U-10), <b>03</b> (U-13), <b>04</b> (U-16)</li>
+                            <li><code>tanggal_bergabung</code> &mdash; Format YYYY-MM-DD (contoh: <b>2026-10-30</b> atau tanggal standar Excel)</li>
+                            <li><code>posisi</code> &mdash; Posisi bermain: Flank, Anchor, Pivot, Kiper, Universal (Opsional)</li>
+                            <li><code>asal_sekolah</code> &mdash; Nama asal sekolah atlet (Opsional)</li>
+                            <li><code>nomor_punggung</code>, <code>kaki_dominan</code>, <code>tinggi_cm</code>, <code>berat_kg</code> &mdash; Atribut fisik (Opsional)</li>
                         </ul>
                     </div>
                     
                     <div class="mb-2">
                         <label for="file_excel" class="form-label fw-semibold small text-dark">Pilih File Dokumen Excel</label>
                         <input class="form-control" type="file" id="file_excel" name="file_excel" accept=".xlsx, .xls, .csv" required style="border-radius: 8px;">
+                        <div class="form-text" style="font-size: 0.75rem;">Mendukung format .xlsx, .xls, .csv (maksimal 5MB).</div>
                     </div>
                 </div>
                 <div class="modal-footer px-4 py-3 bg-light border-top">

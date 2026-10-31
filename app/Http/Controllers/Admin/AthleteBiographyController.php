@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage; 
 use Maatwebsite\Excel\Facades\Excel; 
 use App\Imports\BiographiesImport;
+use App\Exports\BiographyTemplateExport;
 
 class AthleteBiographyController extends Controller
 {
@@ -20,7 +21,7 @@ class AthleteBiographyController extends Controller
             $search = $request->search;
             $query->whereHas('athlete', function($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('nomor_induk', 'like', "%{$search}%");
+                  ->orWhere('kode_barcode', 'like', "%{$search}%");
             });
         }
 
@@ -45,6 +46,7 @@ class AthleteBiographyController extends Controller
             'kategori_kelas'    => 'required|in:01,02,03,04',
             'tanggal_bergabung' => 'required|date',
             'posisi'            => 'nullable|string',
+            'asal_sekolah'      => 'nullable|string|max:255',
             'foto_profil'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
@@ -86,6 +88,7 @@ class AthleteBiographyController extends Controller
             'kategori_kelas'    => 'required|in:01,02,03,04',
             'tanggal_bergabung' => 'required|date',
             'status_aktif'      => 'required|boolean',
+            'asal_sekolah'      => 'nullable|string|max:255',
             'foto_profil'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
@@ -200,19 +203,46 @@ class AthleteBiographyController extends Controller
         $biography = AthleteBiography::with(['athlete', 'achievements', 'statistics', 'galleries'])->findOrFail($id);
         return view('admin.biography.print', compact('biography'));
     }
+
+    public function downloadTemplate()
+    {
+        $filename = 'Template_Import_Biografi_Superseed_' . date('Y-m-d') . '.xlsx';
+        return Excel::download(new BiographyTemplateExport, $filename);
+    }
+
     public function import(Request $request)
     {
         $request->validate([
-            'file_excel' => 'required|mimes:xlsx,xls,csv|max:2048'
+            'file_excel' => 'required|mimes:xlsx,xls,csv|max:5120'
+        ], [
+            'file_excel.required' => 'Pilih file dokumen Excel terlebih dahulu.',
+            'file_excel.mimes'    => 'Format file harus berupa .xlsx, .xls, atau .csv.',
+            'file_excel.max'      => 'Ukuran file Excel maksimal 5MB.'
         ]);
 
         try {
-            // Jalankan proses import
-            Excel::import(new BiographiesImport, $request->file('file_excel'));
-            
-            return redirect()->route('admin.biography.index')->with('success', 'Data Biografi berhasil di-import dari Excel!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal meng-import data: ' . $e->getMessage());
+            $import = new BiographiesImport();
+            Excel::import($import, $request->file('file_excel'));
+
+            $imported = $import->getImportedCount();
+            $skipped  = $import->getSkippedCount();
+
+            if ($imported === 0 && $skipped > 0) {
+                return redirect()->route('admin.biography.index')->with('warning', "Tidak ada data baru yang diimpor. {$skipped} baris dilewati (NIS tidak terdaftar atau atlet sudah memiliki biografi).");
+            }
+
+            if ($imported === 0 && $skipped === 0) {
+                return redirect()->route('admin.biography.index')->with('warning', 'File Excel kosong atau tidak memiliki baris data yang valid.');
+            }
+
+            $pesan = "Berhasil mengimpor {$imported} data biografi atlet!";
+            if ($skipped > 0) {
+                $pesan .= " ({$skipped} baris dilewati karena atlet sudah memiliki biografi atau NIS tidak cocok).";
+            }
+
+            return redirect()->route('admin.biography.index')->with('success', $pesan);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Gagal mengimpor data: ' . $e->getMessage());
         }
     }
 }

@@ -28,8 +28,15 @@ class Athlete extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function biography()
     {
         return $this->hasOne(AthleteBiography::class);
+    }
+
+    // Accessor agar pemanggilan $athlete->nomor_induk selalu aman merujuk ke kode_barcode
+    public function getNomorIndukAttribute()
+    {
+        return $this->kode_barcode;
     }
 }

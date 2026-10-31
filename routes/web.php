@@ -194,6 +194,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('assessment_categories.toggle');
     
     // --- BIOGRAFI ATLET ---
+    Route::get('biography/template', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'downloadTemplate'])->name('biography.template');
     Route::post('biography/import', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'import'])->name('biography.import');
     Route::post('biography/{id}/achievement', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeAchievement'])->name('biography.achievement.store');
     Route::post('biography/{id}/statistic', [\App\Http\Controllers\Admin\AthleteBiographyController::class, 'storeStatistic'])->name('biography.statistic.store');

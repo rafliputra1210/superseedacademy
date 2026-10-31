@@ -679,6 +679,10 @@
                             <td>{{ $bergabung ? $bergabung->translatedFormat('d F Y') : '-' }}</td>
                         </tr>
                         <tr>
+                            <td>Asal Sekolah</td>
+                            <td>{{ $biography->asal_sekolah ?? '-' }}</td>
+                        </tr>
+                        <tr>
                             <td>Masa Latihan</td>
                             <td>
                                 @if ($lama)

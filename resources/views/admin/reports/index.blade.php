@@ -97,24 +97,47 @@
 
     <!-- Tabel Rekapitulasi -->
     <div class="card card-custom shadow-sm border-0">
-        <div class="card-header bg-white py-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
             <div>
                 <h6 class="fw-bold mb-0 text-brand-navy">Matriks Penilaian Asesor & Status Raport</h6>
                 <small class="text-muted">Periode: <strong>{{ $periodeSekarang }}</strong> | Asesor Terdaftar: {{ $assessors->count() }} orang</small>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="small text-muted fw-semibold me-1">Filter:</span>
-                <div class="btn-group btn-group-sm shadow-none" role="group">
-                    <button type="button" class="btn btn-sm btn-primary active filter-btn" onclick="filterStatusRow('all', this)">
-                        Semua ({{ $athletes->count() }})
+            <div class="d-flex align-items-center gap-2.5 flex-wrap">
+                <!-- Input & Tombol Search Nama Siswa Atlet -->
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-2.5 pe-2">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="searchAthleteInput" class="form-control border-start-0 border-end-0 ps-1" 
+                           placeholder="Cari nama atlet..." 
+                           value="{{ request('search') }}"
+                           oninput="applyRaportFilters()"
+                           onkeydown="if(event.key === 'Enter') { event.preventDefault(); applyRaportFilters(); }"
+                           autocomplete="off">
+                    <button class="btn btn-outline-secondary border-start-0 border-end-0 px-2" type="button" id="clearSearchBtn" 
+                            onclick="clearAthleteSearch()" style="display: none;" title="Hapus pencarian">
+                        <i class="bi bi-x-lg" style="font-size: 0.72rem;"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-success filter-btn" onclick="filterStatusRow('active', this)">
-                        <i class="bi bi-check-circle me-1"></i>Aktif ({{ $raportFinal->where('is_archived', false)->count() }})
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" onclick="filterStatusRow('archived', this)">
-                        <i class="bi bi-archive me-1"></i>Arsip ({{ $raportFinal->where('is_archived', true)->count() }})
+                    <button class="btn btn-primary btn-sm px-2.5 fw-semibold" type="button" onclick="applyRaportFilters()" title="Cari Atlet">
+                        Cari
                     </button>
                 </div>
+
+                <!-- Dropdown Filter Status Raport di Header Card -->
+                <div class="d-inline-flex align-items-center gap-1.5 flex-nowrap">
+                    <span class="small text-muted fw-semibold me-1"><i class="bi bi-funnel text-secondary"></i> Status:</span>
+                    <select id="filterStatusRaportDropdownTop" class="form-select form-select-sm border-secondary-subtle shadow-none fw-semibold bg-white" 
+                            style="width: 195px; font-size: 0.8rem; cursor: pointer; border-radius: 8px;"
+                            onchange="applyDropdownStatus(this.value)">
+                        <option value="all">Semua Status ({{ $athletes->count() }})</option>
+                        <option value="published">✓ Sudah Terbit ({{ $raportFinal->count() }})</option>
+                        <option value="active">&nbsp;&nbsp;• Terbit (Aktif) ({{ $raportFinal->where('is_archived', false)->count() }})</option>
+                        <option value="archived">&nbsp;&nbsp;• Terbit (Arsip) ({{ $raportFinal->where('is_archived', true)->count() }})</option>
+                        <option value="unissued">⏳ Belum Terbit ({{ $athletes->count() - $raportFinal->count() }})</option>
+                    </select>
+                </div>
+
+                <span id="searchResultCount" class="badge bg-primary-subtle text-primary border border-primary-subtle" style="display: none; font-size: 0.75rem;"></span>
             </div>
         </div>
         <div class="card-body p-0">
@@ -126,7 +149,20 @@
                             <th colspan="{{ max(1, $assessors->count()) }}" class="py-2 border-end bg-light text-dark fw-bold">
                                 Status Penilaian per Asesor
                             </th>
-                            <th rowspan="2" class="align-middle border-end" style="width: 150px;">Status Raport</th>
+                            <th rowspan="2" class="align-middle border-end px-3 py-2" style="min-width: 175px;">
+                                <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                    <span class="fw-bold text-slate-600">Status Raport</span>
+                                    <select id="filterStatusRaportDropdownTh" class="form-select form-select-sm py-1 px-2 text-dark bg-white border-secondary-subtle shadow-none text-center" 
+                                            style="font-size: 0.75rem; font-weight: 600; cursor: pointer; border-radius: 6px;" 
+                                            onchange="applyDropdownStatus(this.value)">
+                                        <option value="all">Semua ({{ $athletes->count() }})</option>
+                                        <option value="published">✓ Sudah Terbit ({{ $raportFinal->count() }})</option>
+                                        <option value="active">&nbsp;&nbsp;• Terbit Aktif ({{ $raportFinal->where('is_archived', false)->count() }})</option>
+                                        <option value="archived">&nbsp;&nbsp;• Terbit Arsip ({{ $raportFinal->where('is_archived', true)->count() }})</option>
+                                        <option value="unissued">⏳ Belum Terbit ({{ $athletes->count() - $raportFinal->count() }})</option>
+                                    </select>
+                                </div>
+                            </th>
                             <th rowspan="2" class="align-middle pe-4 text-end" style="width: 240px;">Aksi Super Admin</th>
                         </tr>
                         <tr>
@@ -150,7 +186,11 @@
                                     $rowStatus = $sudahTerbit->is_archived ? 'archived' : 'active';
                                 }
                             @endphp
-                            <tr class="raport-row" data-status="{{ $rowStatus }}">
+                            <tr class="raport-row" 
+                                data-status="{{ $rowStatus }}"
+                                data-search="{{ strtolower($atlet->nama . ' ' . ($atlet->nomor_induk ?? '') . ' ' . ($atlet->kelompok_umur ?? '') . ' ' . ($atlet->kelompok_latihan ?? '')) }}"
+                                data-nama="{{ strtolower($atlet->nama) }}"
+                                data-nis="{{ strtolower($atlet->nomor_induk ?? '') }}">
                                 <td class="text-start ps-4 border-end">
                                     <div class="fw-bold text-dark">{{ $atlet->nama }}</div>
                                     <div class="text-muted small">
@@ -481,6 +521,22 @@
                                 </td>
                             </tr>
                         @endforelse
+
+                        <!-- Baris Pesan Jika Hasil Pencarian / Filter Kosong -->
+                        <tr id="raportNoResultsRow" style="display: none;">
+                            <td colspan="{{ 3 + max(1, $assessors->count()) }}" class="text-center py-5 text-muted bg-white">
+                                <div class="py-3">
+                                    <i class="bi bi-person-x fs-1 text-secondary opacity-50 d-block mb-2"></i>
+                                    <h6 class="fw-bold text-dark mb-1">Tidak Ditemukan Siswa Atlet</h6>
+                                    <p class="small text-muted mb-0" id="raportNoResultsText">
+                                        Tidak ada data siswa atlet yang sesuai dengan kata kunci pencarian.
+                                    </p>
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-3" onclick="clearAthleteSearch()">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Reset Pencarian
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -731,48 +787,136 @@ function presetPeriod(type) {
     }
 }
 
-// Inisialisasi default nama periode di form tambah
-document.addEventListener('DOMContentLoaded', function() {
-    presetPeriod('sem_ganjil');
-});
-function filterStatusRow(type, btn) {
-    document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.remove('active');
-        if (b.classList.contains('btn-primary')) {
-            b.classList.remove('btn-primary');
-            b.classList.add('btn-outline-primary');
-        } else if (b.classList.contains('btn-success')) {
-            b.classList.remove('btn-success');
-            b.classList.add('btn-outline-success');
-        } else if (b.classList.contains('btn-secondary')) {
-            b.classList.remove('btn-secondary');
-            b.classList.add('btn-outline-secondary');
-        }
-    });
+// Variabel status filter aktif
+let currentStatusFilter = 'all';
 
-    btn.classList.add('active');
-    if (btn.classList.contains('btn-outline-primary')) {
-        btn.classList.remove('btn-outline-primary');
-        btn.classList.add('btn-primary');
-    } else if (btn.classList.contains('btn-outline-success')) {
-        btn.classList.remove('btn-outline-success');
-        btn.classList.add('btn-success');
-    } else if (btn.classList.contains('btn-outline-secondary')) {
-        btn.classList.remove('btn-outline-secondary');
-        btn.classList.add('btn-secondary');
+function applyDropdownStatus(val) {
+    currentStatusFilter = val;
+
+    // Sinkronisasi kedua dropdown (Header Card & Table Header TH)
+    const ddTop = document.getElementById('filterStatusRaportDropdownTop');
+    const ddTh  = document.getElementById('filterStatusRaportDropdownTh');
+    if (ddTop && ddTop.value !== val) ddTop.value = val;
+    if (ddTh  && ddTh.value !== val) ddTh.value = val;
+
+    applyRaportFilters();
+}
+
+function filterStatusRow(type, btn) {
+    applyDropdownStatus(type);
+}
+
+function applyRaportFilters() {
+    const searchInput = document.getElementById('searchAthleteInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const badgeCount = document.getElementById('searchResultCount');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    if (clearBtn) {
+        clearBtn.style.display = query.length > 0 ? 'inline-block' : 'none';
     }
 
     const rows = document.querySelectorAll('.raport-row');
+    let visibleCount = 0;
+
     rows.forEach(row => {
-        const status = row.getAttribute('data-status');
-        if (type === 'all') {
+        const status = row.getAttribute('data-status') || '';
+        const searchTarget = (row.getAttribute('data-search') || row.getAttribute('data-nama') || '').toLowerCase();
+
+        // 1. Filter Status Raport (Sudah Terbit, Belum Terbit, Aktif, Arsip)
+        let matchStatus = true;
+        if (currentStatusFilter === 'published') {
+            // Sudah Terbit (baik aktif maupun diarsipkan)
+            matchStatus = (status === 'active' || status === 'archived');
+        } else if (currentStatusFilter === 'active') {
+            // Terbit Aktif
+            matchStatus = (status === 'active');
+        } else if (currentStatusFilter === 'archived') {
+            // Terbit Arsip
+            matchStatus = (status === 'archived');
+        } else if (currentStatusFilter === 'unissued') {
+            // Belum Terbit
+            matchStatus = (status === 'unissued');
+        }
+
+        // 2. Filter Search Query
+        let matchSearch = true;
+        if (query.length > 0) {
+            matchSearch = searchTarget.includes(query);
+        }
+
+        if (matchStatus && matchSearch) {
             row.style.display = '';
-        } else if (type === 'active') {
-            row.style.display = (status === 'active') ? '' : 'none';
-        } else if (type === 'archived') {
-            row.style.display = (status === 'archived') ? '' : 'none';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
         }
     });
+
+    // Update Counter Badge jika sedang search
+    if (badgeCount) {
+        if (query.length > 0) {
+            badgeCount.style.display = 'inline-block';
+            badgeCount.textContent = `${visibleCount} atlet`;
+            if (visibleCount === 0) {
+                badgeCount.className = 'badge bg-danger-subtle text-danger border border-danger-subtle';
+            } else {
+                badgeCount.className = 'badge bg-primary-subtle text-primary border border-primary-subtle';
+            }
+        } else {
+            badgeCount.style.display = 'none';
+        }
+    }
+
+    // Tampilkan No Results Row bila tidak ada baris yang cocok
+    const noResultsRow = document.getElementById('raportNoResultsRow');
+    const noResultsText = document.getElementById('raportNoResultsText');
+    if (noResultsRow) {
+        if (visibleCount === 0) {
+            noResultsRow.style.display = '';
+            if (noResultsText) {
+                if (query.length > 0) {
+                    noResultsText.textContent = `Tidak ditemukan siswa atlet dengan kata kunci "${query}".`;
+                } else if (currentStatusFilter === 'unissued') {
+                    noResultsText.textContent = `Seluruh siswa atlet sudah memiliki raport pada periode ini.`;
+                } else if (currentStatusFilter === 'published' || currentStatusFilter === 'active') {
+                    noResultsText.textContent = `Belum ada raport yang diterbitkan pada periode ini.`;
+                } else if (currentStatusFilter === 'archived') {
+                    noResultsText.textContent = `Tidak ada raport yang sedang diarsipkan pada periode ini.`;
+                } else {
+                    noResultsText.textContent = `Tidak ada data siswa atlet pada kategori status ini.`;
+                }
+            }
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
 }
+
+function clearAthleteSearch() {
+    const searchInput = document.getElementById('searchAthleteInput');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+    applyRaportFilters();
+}
+
+// Inisialisasi default nama periode di form tambah & jalankan filter awal jika ada search query
+document.addEventListener('DOMContentLoaded', function() {
+    presetPeriod('sem_ganjil');
+
+    const searchInput = document.getElementById('searchAthleteInput');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearAthleteSearch();
+            }
+        });
+        if (searchInput.value.trim().length > 0) {
+            applyRaportFilters();
+        }
+    }
+});
 </script>
 @endsection

@@ -76,6 +76,15 @@
                            required
                            class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
+
+                {{-- Asal Sekolah --}}
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Asal Sekolah</label>
+                    <input type="text" name="asal_sekolah"
+                           value="{{ old('asal_sekolah', $biography->asal_sekolah) }}"
+                           placeholder="Contoh: SMPN 1 Jakarta"
+                           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
             </div>
         </div>
 
