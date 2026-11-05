@@ -23,7 +23,7 @@
                             <ol class="mb-1 ps-3 text-secondary">
                                 <li>Masuk ke FastPanel &rarr; Menu <strong>Site</strong> &rarr; Pilih domain website.</li>
                                 <li>Pilih menu <strong>SSL Certificates</strong> &rarr; Klik <strong>New Certificate</strong> &rarr; Pilih <strong>Let's Encrypt (Gratis)</strong>.</li>
-                                <li>Aktifkan opsi <strong>Redirect HTTP to HTTPS</strong>, lalu simpan.</li>
+                                <li>Centang opsi <strong>Redirect HTTP to HTTPS</strong>, lalu simpan.</li>
                                 <li>Buka kembali halaman ini dengan awalan <strong>https://</strong></li>
                             </ol>
                         </div>
@@ -162,23 +162,14 @@
     </div>
 </div>
 
-{{-- Muat library html5-qrcode: Multi-CDN (cdnjs -> unpkg -> file lokal) secara sinkron --}}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script>
-    if (typeof Html5Qrcode === 'undefined') {
-        document.write('<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"><\/script>');
-    }
-</script>
-<script>
-    if (typeof Html5Qrcode === 'undefined') {
-        document.write('<script src="{{ asset("js/html5-qrcode.min.js") }}"><\/script>');
-    }
-</script>
+{{-- Muat library html5-qrcode: File lokal langsung --}}
+<script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
 
 <script>
     let html5QrCode = null;
     let isProcessing = false;
     let isScannerRunning = false;
+    let libraryLoadPromise = null;
 
     // Helper escape string untuk mencegah XSS saat render detail error
     function escapeHtml(str) {
@@ -204,6 +195,56 @@
             const warningEl = document.getElementById('https-warning');
             if (warningEl) warningEl.classList.remove('d-none');
         }
+    }
+
+    // Loader mandiri dengan dukungan Multi-CDN jika file lokal belum selesai diunduh di jaringan lambat
+    function ensureLibraryLoaded() {
+        if (typeof Html5Qrcode !== 'undefined') {
+            return Promise.resolve();
+        }
+        if (libraryLoadPromise) {
+            return libraryLoadPromise;
+        }
+
+        libraryLoadPromise = new Promise((resolve, reject) => {
+            const cdnUrls = [
+                "{{ asset('js/html5-qrcode.min.js') }}",
+                "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js",
+                "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js",
+                "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+            ];
+
+            let index = 0;
+            function tryNextUrl() {
+                if (typeof Html5Qrcode !== 'undefined') {
+                    return resolve();
+                }
+                if (index >= cdnUrls.length) {
+                    libraryLoadPromise = null;
+                    return reject(new Error("File scanner (Html5Qrcode) belum berhasil dimuat. Pastikan file public/js/html5-qrcode.min.js terupload di server hosting atau periksa koneksi internet Anda."));
+                }
+
+                const url = cdnUrls[index++];
+                const s = document.createElement('script');
+                s.src = url;
+                s.async = true;
+                s.onload = () => {
+                    if (typeof Html5Qrcode !== 'undefined') {
+                        resolve();
+                    } else {
+                        tryNextUrl();
+                    }
+                };
+                s.onerror = () => {
+                    tryNextUrl();
+                };
+                document.head.appendChild(s);
+            }
+
+            tryNextUrl();
+        });
+
+        return libraryLoadPromise;
     }
 
     // Helper update tampilan status
@@ -333,17 +374,25 @@
         // Hentikan dan bersihkan instance lama
         await stopScannerSafe();
 
+        updateStatus('warning', '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyiapkan modul pemindai kamera...');
+
+        // Tunggu library selesai diunduh jika koneksi lambat
+        try {
+            await ensureLibraryLoaded();
+        } catch (libErr) {
+            updateStatus('danger', `
+                <div class="mb-1">❌ <strong>Modul Scanner Belum Siap:</strong> ${escapeHtml(libErr.message)}</div>
+                <div class="small text-muted mt-1">Silakan coba klik tombol <strong>"Mulai Kamera"</strong> lagi atau gunakan tombol <strong>"Ambil Foto ID Card"</strong> di bawah.</div>
+            `);
+            return;
+        }
+
         updateStatus('warning', '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Membuka kamera... Mohon pilih <strong>"Allow" / "Izinkan"</strong> jika browser meminta izin.');
 
         const readerEl = document.getElementById('reader');
         if (readerEl) readerEl.innerHTML = '';
 
         try {
-            // Pastikan library Html5Qrcode sudah siap
-            if (typeof Html5Qrcode === 'undefined') {
-                throw new Error("Library pemindai (Html5Qrcode) belum berhasil dimuat. Periksa koneksi internet Anda.");
-            }
-
             // Ambil daftar kamera yang tersedia terlebih dahulu jika ada
             const devices = await loadCameraDevices();
 
@@ -496,6 +545,9 @@
             await stopScannerSafe();
             showPlaceholder();
 
+            // Tunggu library dimuat jika belum selesai
+            await ensureLibraryLoaded();
+
             const tempScanner = new Html5Qrcode("reader");
             const decodedText = await tempScanner.scanFile(file, false);
             playBeepSound();
@@ -622,6 +674,9 @@
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return;
             const ctx = new AudioCtx();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'sine';
@@ -639,7 +694,12 @@
     // Inisialisasi saat DOM siap
     document.addEventListener('DOMContentLoaded', function () {
         verifyHttpsRequirement();
-        loadCameraDevices();
+        // Pre-load library di latar belakang
+        ensureLibraryLoaded().then(() => {
+            loadCameraDevices();
+        }).catch(e => {
+            console.warn("Preload library warning:", e);
+        });
     });
 </script>
 @endsection
