@@ -9,9 +9,10 @@ class Attendance extends Model
     protected $fillable = [
         'athlete_id',
         'tanggal',
+        'waktu_absen',
         'status',
         'kode_barcode',
-        'foto_bukti'
+        'foto_bukti',
     ];
 
     public function athlete()

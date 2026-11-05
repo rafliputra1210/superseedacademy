@@ -174,46 +174,57 @@ class AttendanceController extends Controller
     public function storeScan(Request $request)
     {
         $request->validate([
-            'kode_barcode' => 'required|string',
+            'kode_barcode' => 'required|string|max:100',
         ]);
 
+        $kodeBarcode = strip_tags(trim($request->kode_barcode));
+
         // 1. Cari data atlet berdasarkan kode barcode
-        $athlete = Athlete::query()->where('kode_barcode', $request->kode_barcode)->first();
+        $athlete = Athlete::query()->where('kode_barcode', $kodeBarcode)->first();
 
         if (!$athlete) {
             return response()->json([
-                'status' => 'error',
-                'message' => '❌ Barcode "' . $request->kode_barcode . '" tidak dikenali / tidak terdaftar!'
+                'status'  => 'error',
+                'message' => '❌ Barcode "' . e($kodeBarcode) . '" tidak dikenali / tidak terdaftar di sistem!',
             ], 404);
         }
 
         // 2. Cek apakah atlet tersebut sudah absen hari ini (cegah dobel absen)
-        $sudahAbsen = Attendance::query()->where('athlete_id', $athlete->id)
+        $sudahAbsen = Attendance::query()
+            ->where('athlete_id', $athlete->id)
             ->whereDate('tanggal', Carbon::today())
             ->exists();
 
         if ($sudahAbsen) {
             return response()->json([
-                'status' => 'warning',
+                'status'  => 'warning',
                 'message' => '⚠️ ' . $athlete->nama . ' sudah melakukan absensi hari ini!',
-                'athlete' => $athlete
+                'athlete' => [
+                    'nama'           => $athlete->nama,
+                    'kelompok_umur'  => $athlete->kelompok_umur,
+                    'posisi_bermain' => $athlete->posisi_bermain,
+                ],
             ], 200);
         }
 
         // 3. Simpan data absensi dengan status Hadir
-        $attendance = Attendance::create([
-            'athlete_id'   => $athlete->id,
-            'tanggal'      => Carbon::today()->format('Y-m-d'),
-            'waktu_absen'  => Carbon::now()->format('H:i:s'),
-            'status'       => 'hadir',
-            'kode_barcode' => $athlete->kode_barcode
+        $now = Carbon::now();
+        Attendance::create([
+            'athlete_id'  => $athlete->id,
+            'tanggal'     => $now->format('Y-m-d'),
+            'waktu_absen' => $now->format('H:i:s'),
+            'status'      => 'hadir',
         ]);
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => '✅ Berhasil! ' . $athlete->nama . ' hadir latihan.',
-            'athlete' => $athlete,
-            'time'    => Carbon::now()->format('H:i:s')
+            'athlete' => [
+                'nama'           => $athlete->nama,
+                'kelompok_umur'  => $athlete->kelompok_umur,
+                'posisi_bermain' => $athlete->posisi_bermain,
+            ],
+            'time' => $now->format('H:i'),
         ], 200);
     }
 }
